@@ -79,11 +79,13 @@ export default function App() {
   const pagMes = data.pagamentos[mesKey] || {};
 
   const alunosMes = useMemo(() => {
-    return data.alunos.map(a => ({
-      ...a,
-      valor: getValor(a),
-      pago: pagMes[a.id] === true,
-    }));
+    return data.alunos
+      .filter(a => a.ativo !== false)
+      .map(a => ({
+        ...a,
+        valor: getValor(a),
+        pago: pagMes[a.id] === true,
+      }));
   }, [data.alunos, pagMes]);
 
   const totalEsperado = alunosMes.reduce((s, a) => s + a.valor, 0);
@@ -126,6 +128,13 @@ export default function App() {
   function deletarAluno(id) {
     setData(d => ({ ...d, alunos: d.alunos.filter(a => a.id !== id) }));
     setConfirmDelete(null);
+  }
+
+  function toggleAtivo(id) {
+    setData(d => ({
+      ...d,
+      alunos: d.alunos.map(a => a.id === id ? { ...a, ativo: a.ativo === false ? true : false } : a),
+    }));
   }
 
   function exportarBackup() {
@@ -176,8 +185,11 @@ export default function App() {
     return `https://wa.me/55${num}?text=${msg}`;
   }
 
-  // Agrupar por nível
-  const niveisList = [...new Set(data.alunos.map(a => a.nivel))].sort((a,b) => Number(a)-Number(b));
+  const alunosAtivos = data.alunos.filter(a => a.ativo !== false);
+  const alunosInativos = data.alunos.filter(a => a.ativo === false);
+
+  // Agrupar por nível (só ativos)
+  const niveisList = [...new Set(alunosAtivos.map(a => a.nivel))].sort((a,b) => Number(a)-Number(b));
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'Inter', 'Segoe UI', sans-serif", paddingBottom: 60 }}>
@@ -190,7 +202,7 @@ export default function App() {
           </div>
           <p style={{ fontSize: 12, color: COLORS.textDim, margin: "0 0 16px", letterSpacing: 1, textTransform: "uppercase" }}>Controle de Mensalidades</p>
           <div style={{ display: "flex", gap: 0 }}>
-            {[["mensal","Mensal"],["niveis","Níveis"],["frequencia","Frequência"],["alunos","Alunos"]].map(([t, label]) => (
+            {[["mensal","Mensal"],["niveis","Níveis"],["frequencia","Frequência"],["alunos","Alunos"],["inativos","Inativos"]].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 background: "none", border: "none", cursor: "pointer",
                 padding: "8px 20px", fontSize: 13, fontWeight: 600,
@@ -333,7 +345,7 @@ export default function App() {
         {tab === "niveis" && (() => {
           const nivelIdxSafe = Math.min(nivelIdx, Math.max(0, niveisList.length - 1));
           const nivelAtual = niveisList[nivelIdxSafe];
-          const alunosNivel = data.alunos.filter(a => a.nivel === nivelAtual);
+          const alunosNivel = alunosAtivos.filter(a => a.nivel === nivelAtual);
           const qtdAluno = alunosNivel.filter(a => a.tipo === "aluno").length;
           const qtdMeio = alunosNivel.filter(a => a.tipo === "meio").length;
           const qtdBolsista = alunosNivel.filter(a => a.tipo === "bolsista").length;
@@ -435,7 +447,7 @@ export default function App() {
         {tab === "frequencia" && (() => {
           const freqKey = getMesKey(freqAnoSel, freqMesSel);
           const freqMes = data.frequencia[freqKey] || {};
-          const alunosOrdenados = [...data.alunos].sort((a, b) => a.nome.localeCompare(b.nome));
+          const alunosOrdenados = [...alunosAtivos].sort((a, b) => a.nome.localeCompare(b.nome));
 
           return (
             <div>
@@ -532,7 +544,7 @@ export default function App() {
         {tab === "alunos" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
-              <div style={{ fontSize: 13, color: COLORS.textMuted }}>{data.alunos.length} aluno(s) cadastrado(s)</div>
+              <div style={{ fontSize: 13, color: COLORS.textMuted }}>{alunosAtivos.length} aluno(s) ativo(s)</div>
               <button onClick={() => { setEditAluno(null); setModalOpen(true); }} style={{
                 background: COLORS.gold, color: "#0D0D0F", border: "none", borderRadius: 8,
                 padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
@@ -630,15 +642,15 @@ export default function App() {
               </label>
             </div>
 
-            {data.alunos.length === 0 ? (
+            {alunosAtivos.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>💃</div>
-                <div style={{ fontSize: 14 }}>Nenhum aluno ainda. Adicione o primeiro!</div>
+                <div style={{ fontSize: 14 }}>Nenhum aluno ativo. Adicione o primeiro!</div>
               </div>
             ) : (() => {
               const alunosFiltrados = busca.trim()
-                ? data.alunos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()))
-                : data.alunos;
+                ? alunosAtivos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()))
+                : alunosAtivos;
               return alunosFiltrados.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px 0", color: COLORS.textDim }}>
                   <div style={{ fontSize: 14 }}>Nenhum aluno encontrado para "{busca}".</div>
@@ -668,13 +680,67 @@ export default function App() {
                         {aluno.whatsapp ? ` · ${aluno.whatsapp}` : ""}
                       </div>
                     </div>
-                    <button onClick={() => { setEditAluno(aluno); setModalOpen(true); }} style={btnIcon}>✏️</button>
-                    <button onClick={() => setConfirmDelete(aluno)} style={btnIcon}>🗑️</button>
+                    <button onClick={() => { setEditAluno(aluno); setModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(aluno.id)} style={{ ...btnIcon, fontSize: 14 }} title="Inativar aluno">⏸️</button>
+                    <button onClick={() => setConfirmDelete(aluno)} style={btnIcon} title="Excluir">🗑️</button>
                   </div>
                 ))}
               </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* TAB INATIVOS */}
+        {tab === "inativos" && (
+          <div>
+            <div style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 16 }}>
+              {alunosInativos.length} aluno(s) inativo(s) — mensalidade congelada
+            </div>
+            {alunosInativos.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+                <div style={{ fontSize: 14 }}>Nenhum aluno inativo no momento.</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {alunosInativos.map(aluno => (
+                  <div key={aluno.id} style={{
+                    background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                    borderRadius: 10, padding: "12px 16px",
+                    display: "flex", alignItems: "center", gap: 12,
+                    opacity: 0.65,
+                  }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 8, background: COLORS.border,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 13, fontWeight: 800, color: COLORS.textDim, flexShrink: 0,
+                    }}>
+                      N{aluno.nivel}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: COLORS.textMuted }}>{aluno.nome}</div>
+                      <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 1 }}>
+                        {TIPO_LABELS[aluno.tipo].label} · Nível {aluno.nivel} · <span style={{ color: COLORS.red }}>Inativo</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => toggleAtivo(aluno.id)}
+                      title="Reativar aluno"
+                      style={{
+                        background: COLORS.green + "22", color: COLORS.green,
+                        border: `1px solid ${COLORS.green}44`, borderRadius: 7,
+                        padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      ▶ Reativar
+                    </button>
+                    <button onClick={() => setConfirmDelete(aluno)} style={btnIcon} title="Excluir">🗑️</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

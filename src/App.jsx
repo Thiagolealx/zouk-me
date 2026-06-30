@@ -34,12 +34,19 @@ function getValor(aluno) {
   return Math.max(0, bruto - desconto);
 }
 
+function getAulasPorMes(tipo) {
+  return tipo === "bolsista" ? 3 : 4;
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem("zoukme_v1");
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { frequencia: {}, ...parsed };
+    }
   } catch {}
-  return { alunos: [], pagamentos: {} };
+  return { alunos: [], pagamentos: {}, frequencia: {} };
 }
 
 function saveData(data) {
@@ -63,6 +70,8 @@ export default function App() {
   const [mesSel, setMesSel] = useState(now.getMonth());
   const [anoSel, setAnoSel] = useState(now.getFullYear());
   const [nivelIdx, setNivelIdx] = useState(0);
+  const [freqMesSel, setFreqMesSel] = useState(now.getMonth());
+  const [freqAnoSel, setFreqAnoSel] = useState(now.getFullYear());
 
   useEffect(() => { saveData(data); }, [data]);
 
@@ -86,6 +95,21 @@ export default function App() {
   function togglePago(id) {
     const novo = { ...pagMes, [id]: !pagMes[id] };
     setData(d => ({ ...d, pagamentos: { ...d.pagamentos, [mesKey]: novo } }));
+  }
+
+  function togglePresenca(alunoId, aulaIdx, freqKey) {
+    setData(d => {
+      const freqMes = d.frequencia[freqKey] || {};
+      const presencas = freqMes[alunoId] ? [...freqMes[alunoId]] : [];
+      presencas[aulaIdx] = !presencas[aulaIdx];
+      return {
+        ...d,
+        frequencia: {
+          ...d.frequencia,
+          [freqKey]: { ...freqMes, [alunoId]: presencas },
+        },
+      };
+    });
   }
 
   function salvarAluno(aluno) {
@@ -166,7 +190,7 @@ export default function App() {
           </div>
           <p style={{ fontSize: 12, color: COLORS.textDim, margin: "0 0 16px", letterSpacing: 1, textTransform: "uppercase" }}>Controle de Mensalidades</p>
           <div style={{ display: "flex", gap: 0 }}>
-            {[["mensal","Mensal"],["niveis","Níveis"],["alunos","Alunos"]].map(([t, label]) => (
+            {[["mensal","Mensal"],["niveis","Níveis"],["frequencia","Frequência"],["alunos","Alunos"]].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 background: "none", border: "none", cursor: "pointer",
                 padding: "8px 20px", fontSize: 13, fontWeight: 600,
@@ -402,6 +426,103 @@ export default function App() {
                     ))}
                   </div>
                 </>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* TAB FREQUÊNCIA */}
+        {tab === "frequencia" && (() => {
+          const freqKey = getMesKey(freqAnoSel, freqMesSel);
+          const freqMes = data.frequencia[freqKey] || {};
+          const alunosOrdenados = [...data.alunos].sort((a, b) => a.nome.localeCompare(b.nome));
+
+          return (
+            <div>
+              {/* Seletor de mês */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                <button onClick={() => {
+                  if (freqMesSel === 0) { setFreqMesSel(11); setFreqAnoSel(a => a - 1); }
+                  else setFreqMesSel(m => m - 1);
+                }} style={btnNav}>‹</button>
+                <span style={{ fontSize: 18, fontWeight: 700, minWidth: 180, textAlign: "center" }}>
+                  {MESES[freqMesSel]} <span style={{ color: COLORS.textMuted, fontWeight: 400 }}>{freqAnoSel}</span>
+                </span>
+                <button onClick={() => {
+                  if (freqMesSel === 11) { setFreqMesSel(0); setFreqAnoSel(a => a + 1); }
+                  else setFreqMesSel(m => m + 1);
+                }} style={btnNav}>›</button>
+              </div>
+
+              {alunosOrdenados.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🎶</div>
+                  <div style={{ fontSize: 14 }}>Nenhum aluno cadastrado ainda.</div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {alunosOrdenados.map(aluno => {
+                    const totalAulas = getAulasPorMes(aluno.tipo);
+                    const presencas = freqMes[aluno.id] || [];
+                    const qtdPresente = presencas.filter(Boolean).length;
+                    const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
+                    const corPct = pct >= 75 ? COLORS.green : pct >= 50 ? COLORS.gold : COLORS.red;
+
+                    return (
+                      <div key={aluno.id} style={{
+                        background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                        borderRadius: 12, padding: "14px 16px",
+                      }}>
+                        {/* Linha do nome */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 8,
+                            background: TIPO_LABELS[aluno.tipo].color + "22",
+                            border: `1px solid ${TIPO_LABELS[aluno.tipo].color}44`,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 13, fontWeight: 800, color: TIPO_LABELS[aluno.tipo].color, flexShrink: 0,
+                          }}>
+                            {aluno.nome.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aluno.nome}</div>
+                            <div style={{ fontSize: 11, color: TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>
+                              {TIPO_LABELS[aluno.tipo].label} · Nível {aluno.nivel}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: corPct }}>{pct}%</div>
+                            <div style={{ fontSize: 10, color: COLORS.textDim }}>{qtdPresente}/{totalAulas} aulas</div>
+                          </div>
+                        </div>
+
+                        {/* Bolinhas de presença */}
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {Array.from({ length: totalAulas }).map((_, i) => {
+                            const presente = presencas[i] === true;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => togglePresenca(aluno.id, i, freqKey)}
+                                style={{
+                                  flex: 1, height: 38, borderRadius: 8, cursor: "pointer",
+                                  border: `2px solid ${presente ? COLORS.green : COLORS.border}`,
+                                  background: presente ? COLORS.green + "33" : "transparent",
+                                  color: presente ? COLORS.green : COLORS.textDim,
+                                  fontSize: 16, fontWeight: 700,
+                                  transition: "all 0.15s",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                }}
+                              >
+                                {presente ? "✓" : <span style={{ fontSize: 11 }}>Aula {i + 1}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           );

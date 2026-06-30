@@ -681,7 +681,6 @@ export default function App() {
                       </div>
                     </div>
                     <button onClick={() => { setEditAluno(aluno); setModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
-                    <button onClick={() => toggleAtivo(aluno.id)} style={{ ...btnIcon, fontSize: 14 }} title="Inativar aluno">⏸️</button>
                     <button onClick={() => setConfirmDelete(aluno)} style={btnIcon} title="Excluir">🗑️</button>
                   </div>
                 ))}
@@ -751,6 +750,7 @@ export default function App() {
           aluno={editAluno}
           onSave={salvarAluno}
           onClose={() => { setModalOpen(false); setEditAluno(null); }}
+          onToggleAtivo={(id) => { toggleAtivo(id); setModalOpen(false); setEditAluno(null); }}
         />
       )}
 
@@ -782,7 +782,7 @@ function Card({ label, value, color }) {
   );
 }
 
-function Modal({ aluno, onSave, onClose }) {
+function Modal({ aluno, onSave, onClose, onToggleAtivo }) {
   const [form, setForm] = useState({
     nome: aluno?.nome || "",
     nivel: aluno?.nivel ?? "",
@@ -865,6 +865,21 @@ function Modal({ aluno, onSave, onClose }) {
 
         <label style={lbl}>WhatsApp (opcional)</label>
         <input style={inp} value={form.whatsapp} onChange={e => set("whatsapp", e.target.value)} placeholder="Ex: 83912345678" />
+
+        {aluno && (
+          <button
+            onClick={() => onToggleAtivo(aluno.id)}
+            style={{
+              width: "100%", marginBottom: 10, padding: "9px 0",
+              borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+              border: `1px solid ${aluno.ativo === false ? COLORS.green + "66" : COLORS.red + "66"}`,
+              background: aluno.ativo === false ? COLORS.green + "11" : COLORS.red + "11",
+              color: aluno.ativo === false ? COLORS.green : COLORS.red,
+            }}
+          >
+            {aluno.ativo === false ? "▶ Reativar aluno" : "⏸ Congelar / Inativar aluno"}
+          </button>
+        )}
 
         <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
           <button onClick={onClose} style={{ ...btnSec, flex: 1 }}>Cancelar</button>

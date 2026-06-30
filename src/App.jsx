@@ -60,6 +60,7 @@ export default function App() {
   const now = new Date();
   const [mesSel, setMesSel] = useState(now.getMonth());
   const [anoSel, setAnoSel] = useState(now.getFullYear());
+  const [nivelIdx, setNivelIdx] = useState(0);
 
   useEffect(() => { saveData(data); }, [data]);
 
@@ -163,16 +164,15 @@ export default function App() {
           </div>
           <p style={{ fontSize: 12, color: COLORS.textDim, margin: "0 0 16px", letterSpacing: 1, textTransform: "uppercase" }}>Controle de Mensalidades</p>
           <div style={{ display: "flex", gap: 0 }}>
-            {["mensal","alunos"].map(t => (
+            {[["mensal","Mensal"],["niveis","Níveis"],["alunos","Alunos"]].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 background: "none", border: "none", cursor: "pointer",
                 padding: "8px 20px", fontSize: 13, fontWeight: 600,
                 color: tab === t ? COLORS.gold : COLORS.textMuted,
                 borderBottom: tab === t ? `2px solid ${COLORS.gold}` : "2px solid transparent",
                 transition: "all 0.15s",
-                textTransform: "capitalize",
               }}>
-                {t === "mensal" ? "Mensal" : "Alunos"}
+                {label}
               </button>
             ))}
           </div>
@@ -302,6 +302,108 @@ export default function App() {
             )}
           </div>
         )}
+
+        {/* TAB NÍVEIS */}
+        {tab === "niveis" && (() => {
+          const nivelIdxSafe = Math.min(nivelIdx, Math.max(0, niveisList.length - 1));
+          const nivelAtual = niveisList[nivelIdxSafe];
+          const alunosNivel = data.alunos.filter(a => a.nivel === nivelAtual);
+          const qtdAluno = alunosNivel.filter(a => a.tipo === "aluno").length;
+          const qtdMeio = alunosNivel.filter(a => a.tipo === "meio").length;
+          const qtdBolsista = alunosNivel.filter(a => a.tipo === "bolsista").length;
+          const totalNivel = alunosNivel.reduce((s, a) => s + getValor(a), 0);
+
+          return (
+            <div>
+              {niveisList.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🎶</div>
+                  <div style={{ fontSize: 14 }}>Nenhum aluno cadastrado ainda.</div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>Vá na aba Alunos para adicionar.</div>
+                </div>
+              ) : (
+                <>
+                  {/* Navegação de nível */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                    <button
+                      onClick={() => setNivelIdx(i => Math.max(0, i - 1))}
+                      disabled={nivelIdxSafe === 0}
+                      style={{ ...btnNav, opacity: nivelIdxSafe === 0 ? 0.3 : 1 }}
+                    >‹</button>
+                    <span style={{ fontSize: 18, fontWeight: 700, minWidth: 180, textAlign: "center" }}>
+                      Nível <span style={{ color: COLORS.gold }}>{nivelAtual}</span>
+                      <span style={{ color: COLORS.textMuted, fontWeight: 400, fontSize: 13 }}> ({nivelIdxSafe + 1}/{niveisList.length})</span>
+                    </span>
+                    <button
+                      onClick={() => setNivelIdx(i => Math.min(niveisList.length - 1, i + 1))}
+                      disabled={nivelIdxSafe === niveisList.length - 1}
+                      style={{ ...btnNav, opacity: nivelIdxSafe === niveisList.length - 1 ? 0.3 : 1 }}
+                    >›</button>
+                  </div>
+
+                  {/* Cards resumo do nível */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 20 }}>
+                    <Card label="Total no nível" value={`${alunosNivel.length} aluno${alunosNivel.length !== 1 ? "s" : ""}`} color={COLORS.text} />
+                    <Card label="Receita nível" value={`R$ ${totalNivel.toFixed(2).replace(".",",")}`} color={COLORS.gold} />
+                  </div>
+
+                  {/* Breakdown por tipo */}
+                  <div style={{
+                    display: "flex", gap: 8, marginBottom: 20,
+                    background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                    borderRadius: 10, padding: "12px 16px",
+                  }}>
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.green }}>{qtdAluno}</div>
+                      <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>Aluno</div>
+                    </div>
+                    <div style={{ width: 1, background: COLORS.border }} />
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.blue }}>{qtdMeio}</div>
+                      <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>Meio Bolsista</div>
+                    </div>
+                    <div style={{ width: 1, background: COLORS.border }} />
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.textMuted }}>{qtdBolsista}</div>
+                      <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>Bolsista</div>
+                    </div>
+                  </div>
+
+                  {/* Lista de alunos do nível */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {alunosNivel.map(aluno => (
+                      <div key={aluno.id} style={{
+                        background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                        borderRadius: 10, padding: "12px 16px",
+                        display: "flex", alignItems: "center", gap: 12,
+                      }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 8,
+                          background: TIPO_LABELS[aluno.tipo].color + "22",
+                          border: `1px solid ${TIPO_LABELS[aluno.tipo].color}44`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 14, fontWeight: 800, color: TIPO_LABELS[aluno.tipo].color, flexShrink: 0,
+                        }}>
+                          {aluno.nome.charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aluno.nome}</div>
+                          <div style={{ fontSize: 11, color: TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>
+                            {TIPO_LABELS[aluno.tipo].label}
+                            {aluno.whatsapp ? ` · ${aluno.whatsapp}` : ""}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: getValor(aluno) > 0 ? COLORS.text : COLORS.textDim, flexShrink: 0 }}>
+                          {getValor(aluno) > 0 ? `R$ ${getValor(aluno).toFixed(2).replace(".",",")}` : "Gratuito"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
 
         {/* TAB ALUNOS */}
         {tab === "alunos" && (

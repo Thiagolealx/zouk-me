@@ -29,7 +29,9 @@ const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Ag
 
 function getValor(aluno) {
   const base = aluno.mensalidade ?? DEFAULT_MENSALIDADE;
-  return base * TIPO_LABELS[aluno.tipo].valor;
+  const bruto = base * TIPO_LABELS[aluno.tipo].valor;
+  const desconto = aluno.tipo !== "bolsista" ? (aluno.desconto ?? 0) : 0;
+  return Math.max(0, bruto - desconto);
 }
 
 function loadData() {
@@ -356,6 +358,9 @@ export default function App() {
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{aluno.nome}</div>
                       <div style={{ fontSize: 11, color: TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>
                         {TIPO_LABELS[aluno.tipo].label} · {getValor(aluno) > 0 ? `R$ ${getValor(aluno).toFixed(2).replace(".",",")}` : "Gratuito"}
+                        {aluno.tipo !== "bolsista" && (aluno.desconto ?? 0) > 0 && (
+                          <span style={{ color: COLORS.green }}> (desc. R$ {Number(aluno.desconto).toFixed(2).replace(".",",")})</span>
+                        )}
                         {aluno.whatsapp ? ` · ${aluno.whatsapp}` : ""}
                       </div>
                     </div>
@@ -412,6 +417,7 @@ function Modal({ aluno, onSave, onClose }) {
     nivel: aluno?.nivel ?? "",
     tipo: aluno?.tipo || "aluno",
     mensalidade: aluno?.mensalidade ?? DEFAULT_MENSALIDADE,
+    desconto: aluno?.desconto ?? 0,
     whatsapp: aluno?.whatsapp || "",
     id: aluno?.id || null,
   });
@@ -455,12 +461,34 @@ function Modal({ aluno, onSave, onClose }) {
         {form.tipo !== "bolsista" && (
           <>
             <label style={lbl}>Valor da Mensalidade (R$)</label>
-            <input style={inp} type="number" value={form.mensalidade} onChange={e => set("mensalidade", Number(e.target.value))} />
-            {form.tipo === "meio" && (
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: -10, marginBottom: 14 }}>
-                Meio bolsista pagará R$ {(form.mensalidade / 2).toFixed(2).replace(".",",")}
-              </div>
-            )}
+            <input style={inp} type="number" min="0" value={form.mensalidade} onChange={e => set("mensalidade", Number(e.target.value))} />
+
+            <label style={lbl}>Desconto (R$)</label>
+            <input style={inp} type="number" min="0" value={form.desconto} onChange={e => set("desconto", Number(e.target.value))} placeholder="0" />
+
+            {(() => {
+              const bruto = form.mensalidade * TIPO_LABELS[form.tipo].valor;
+              const final = Math.max(0, bruto - (form.desconto ?? 0));
+              return (
+                <div style={{
+                  fontSize: 12, color: COLORS.textMuted, marginTop: -10, marginBottom: 14,
+                  padding: "8px 10px", background: COLORS.surfaceHover, borderRadius: 8,
+                  borderLeft: `3px solid ${COLORS.gold}`,
+                }}>
+                  {form.tipo === "meio"
+                    ? `Meio bolsista: R$ ${(form.mensalidade / 2).toFixed(2).replace(".",",")} `
+                    : `Mensalidade cheia: R$ ${form.mensalidade.toFixed(2).replace(".",",")} `}
+                  {(form.desconto ?? 0) > 0 && (
+                    <span style={{ color: COLORS.green }}>
+                      − R$ {(form.desconto).toFixed(2).replace(".",",")} (desconto)
+                    </span>
+                  )}
+                  <span style={{ fontWeight: 700, color: COLORS.gold, display: "block", marginTop: 2 }}>
+                    Valor final: R$ {final.toFixed(2).replace(".",",")}
+                  </span>
+                </div>
+              );
+            })()}
           </>
         )}
 

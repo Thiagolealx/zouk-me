@@ -201,14 +201,15 @@ export default function App() {
             <span style={{ fontSize: 22, fontWeight: 300, color: COLORS.textMuted }}>— me</span>
           </div>
           <p style={{ fontSize: 12, color: COLORS.textDim, margin: "0 0 16px", letterSpacing: 1, textTransform: "uppercase" }}>Controle de Mensalidades</p>
-          <div style={{ display: "flex", gap: 0 }}>
+          <div style={{ display: "flex", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             {[["mensal","Mensal"],["niveis","Níveis"],["frequencia","Frequência"],["alunos","Alunos"],["inativos","Inativos"]].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 background: "none", border: "none", cursor: "pointer",
-                padding: "8px 20px", fontSize: 13, fontWeight: 600,
+                padding: "8px 16px", fontSize: 13, fontWeight: 600,
                 color: tab === t ? COLORS.gold : COLORS.textMuted,
                 borderBottom: tab === t ? `2px solid ${COLORS.gold}` : "2px solid transparent",
                 transition: "all 0.15s",
+                whiteSpace: "nowrap", flexShrink: 0,
               }}>
                 {label}
               </button>

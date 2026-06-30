@@ -56,6 +56,8 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editAluno, setEditAluno] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [busca, setBusca] = useState("");
+  const [buscaFoco, setBuscaFoco] = useState(false);
 
   const now = new Date();
   const [mesSel, setMesSel] = useState(now.getMonth());
@@ -418,6 +420,77 @@ export default function App() {
               </button>
             </div>
 
+            {/* Barra de busca com autocomplete */}
+            <div style={{ position: "relative", marginBottom: 16 }}>
+              <div style={{ position: "relative" }}>
+                <span style={{
+                  position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                  fontSize: 14, color: COLORS.textDim, pointerEvents: "none",
+                }}>🔍</span>
+                <input
+                  style={{ ...inp, paddingLeft: 36, marginBottom: 0 }}
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                  onFocus={() => setBuscaFoco(true)}
+                  onBlur={() => setTimeout(() => setBuscaFoco(false), 150)}
+                  placeholder="Buscar aluno por nome..."
+                />
+                {busca && (
+                  <button onClick={() => setBusca("")} style={{
+                    position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: COLORS.textDim, fontSize: 16,
+                  }}>×</button>
+                )}
+              </div>
+              {/* Dropdown autocomplete */}
+              {buscaFoco && busca.length > 0 && (() => {
+                const sugestoes = data.alunos.filter(a =>
+                  a.nome.toLowerCase().includes(busca.toLowerCase())
+                ).slice(0, 5);
+                return sugestoes.length > 0 ? (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+                    background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                    borderRadius: 8, marginTop: 4, overflow: "hidden",
+                    boxShadow: "0 8px 24px #00000066",
+                  }}>
+                    {sugestoes.map(a => (
+                      <button key={a.id} onMouseDown={() => setBusca(a.nome)} style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        width: "100%", background: "none", border: "none", cursor: "pointer",
+                        padding: "10px 14px", textAlign: "left",
+                        borderBottom: `1px solid ${COLORS.border}`,
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.background = COLORS.surfaceHover}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                      >
+                        <div style={{
+                          width: 28, height: 28, borderRadius: 6,
+                          background: TIPO_LABELS[a.tipo].color + "22",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 12, fontWeight: 800, color: TIPO_LABELS[a.tipo].color, flexShrink: 0,
+                        }}>
+                          {a.nome.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>
+                            {a.nome.split(new RegExp(`(${busca})`, "i")).map((part, i) =>
+                              part.toLowerCase() === busca.toLowerCase()
+                                ? <span key={i} style={{ color: COLORS.gold }}>{part}</span>
+                                : part
+                            )}
+                          </div>
+                          <div style={{ fontSize: 11, color: TIPO_LABELS[a.tipo].color }}>
+                            {TIPO_LABELS[a.tipo].label} · Nível {a.nivel}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+            </div>
+
             {/* Backup / Restaurar */}
             <div style={{
               display: "flex", gap: 8, marginBottom: 20, padding: "10px 14px",
@@ -441,9 +514,17 @@ export default function App() {
                 <div style={{ fontSize: 36, marginBottom: 12 }}>💃</div>
                 <div style={{ fontSize: 14 }}>Nenhum aluno ainda. Adicione o primeiro!</div>
               </div>
-            ) : (
+            ) : (() => {
+              const alunosFiltrados = busca.trim()
+                ? data.alunos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()))
+                : data.alunos;
+              return alunosFiltrados.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 0", color: COLORS.textDim }}>
+                  <div style={{ fontSize: 14 }}>Nenhum aluno encontrado para "{busca}".</div>
+                </div>
+              ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {data.alunos.map(aluno => (
+                {alunosFiltrados.map(aluno => (
                   <div key={aluno.id} style={{
                     background: COLORS.surface, border: `1px solid ${COLORS.border}`,
                     borderRadius: 10, padding: "12px 16px",
@@ -471,7 +552,8 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </div>

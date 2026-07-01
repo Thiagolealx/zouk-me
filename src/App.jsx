@@ -878,36 +878,20 @@ export default function App() {
                               {secao}
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                              {itensNivel.filter(i => i.secao === secao).map(item => {
-                                const marcado = plano.marcados[item.id] === true;
-                                return (
-                                  <div key={item.id} style={{
-                                    display: "flex", alignItems: "center", gap: 9,
-                                    background: COLORS.surface,
-                                    border: `1px solid ${marcado ? cor + "44" : COLORS.border}`,
-                                    borderRadius: 7, padding: "8px 10px", transition: "all 0.15s",
-                                  }}>
-                                    <button onClick={() => toggleMarcado(item.id)} style={{
-                                      width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                                      border: `2px solid ${marcado ? cor : COLORS.border}`,
-                                      background: marcado ? cor : "transparent",
-                                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                                      color: "#fff", fontSize: 10, fontWeight: 700, transition: "all 0.15s",
-                                    }}>
-                                      {marcado ? "✓" : ""}
-                                    </button>
-                                    <div style={{
-                                      flex: 1, fontSize: 13, lineHeight: 1.4,
-                                      color: marcado ? COLORS.textDim : COLORS.text,
-                                      textDecoration: marcado ? "line-through" : "none",
-                                    }}>
-                                      {item.texto}
-                                    </div>
-                                    <button onClick={() => { setEditPlanoItem(item); setPlanoModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
-                                    <button onClick={() => deletarPlanoItem(item.id)} style={btnIcon} title="Remover">🗑️</button>
+                              {itensNivel.filter(i => i.secao === secao).map(item => (
+                                <div key={item.id} style={{
+                                  display: "flex", alignItems: "center", gap: 9,
+                                  background: COLORS.surface,
+                                  border: `1px solid ${COLORS.border}`,
+                                  borderRadius: 7, padding: "8px 10px",
+                                }}>
+                                  <div style={{ flex: 1, fontSize: 13, lineHeight: 1.4, color: COLORS.text }}>
+                                    {item.texto}
                                   </div>
-                                );
-                              })}
+                                  <button onClick={() => { setEditPlanoItem(item); setPlanoModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
+                                  <button onClick={() => deletarPlanoItem(item.id)} style={btnIcon} title="Remover">🗑️</button>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ))}

@@ -27,6 +27,151 @@ const TIPO_LABELS = {
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
+const NIVEIS_ZOUK = ["Zouk-0", "Zouk-1", "Zouk-2", "Zouk-3"];
+const NIVEL_CORES = { "Zouk-0": "#A07850", "Zouk-1": "#4CAF82", "Zouk-2": "#E8B84B", "Zouk-3": "#5B9CF6" };
+const NIVEL_EMOJI = { "Zouk-0": "🟤", "Zouk-1": "🟢", "Zouk-2": "🟡", "Zouk-3": "🔵" };
+const NIVEL_NOMES = { "Zouk-0": "Fundamentações", "Zouk-1": "Nível 1", "Zouk-2": "Iniciados", "Zouk-3": "Intermediário" };
+
+const PLANO_INICIAL = [
+  // Zouk-0 — Fundamentações
+  { id: "p0001", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base no Lugar" },
+  { id: "p0002", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Frente e Trás" },
+  { id: "p0003", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Corredor (líder e follow)" },
+  { id: "p0004", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Viradinha → conexão com Corredor" },
+  { id: "p0005", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Abertura" },
+  { id: "p0006", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Bônus" },
+  { id: "p0007", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Bônus esquerda" },
+  { id: "p0008", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Caminhada" },
+  { id: "p0009", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Rau" },
+  { id: "p0010", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base S" },
+  { id: "p0011", nivel: "Zouk-0", secao: "Fundamentos do Zouk", texto: "Base Soltinho" },
+  { id: "p0012", nivel: "Zouk-0", secao: "Movements (Movimentos Essenciais)", texto: "Giro Simples" },
+  { id: "p0013", nivel: "Zouk-0", secao: "Movements (Movimentos Essenciais)", texto: "Giro em L" },
+  { id: "p0014", nivel: "Zouk-0", secao: "Movements (Movimentos Essenciais)", texto: "Giro Soltinho" },
+  { id: "p0015", nivel: "Zouk-0", secao: "Movements (Movimentos Essenciais)", texto: "Giro em S" },
+  { id: "p0016", nivel: "Zouk-0", secao: "Movements (Movimentos Essenciais)", texto: "Giro 90° / 180° / 270° (do ioiô)" },
+  { id: "p0017", nivel: "Zouk-0", secao: "Variações das Bases", texto: "Bate quadril (viradinha)" },
+  { id: "p0018", nivel: "Zouk-0", secao: "Variações das Bases", texto: "Ondinha pra trás (do ioiô)" },
+  { id: "p0019", nivel: "Zouk-0", secao: "Variações das Bases", texto: "Rau (vai e volta)" },
+  { id: "p0020", nivel: "Zouk-0", secao: "Variações das Bases", texto: "Rau (trava na cintura + volta líder)" },
+  { id: "p0021", nivel: "Zouk-0", secao: "Variações das Bases", texto: "Frente-trás (passinho do Hugo)" },
+  { id: "p0022", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Gostosinho" },
+  { id: "p0023", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Variação do Bônus (mão trocada)" },
+  { id: "p0024", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Variação do Ioiô" },
+  { id: "p0025", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Abertura em X (Val & Vanessa)" },
+  { id: "p0026", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Cambre" },
+  { id: "p0027", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Introdução Lambada" },
+  { id: "p0028", nivel: "Zouk-0", secao: "Estilizações / Brincadeiras Iniciais", texto: "Musicalidade I" },
+  // Zouk-1 — Nível 1
+  { id: "p0029", nivel: "Zouk-1", secao: "4 Fundamentos da Cabeça", texto: "Balão" },
+  { id: "p0030", nivel: "Zouk-1", secao: "4 Fundamentos da Cabeça", texto: "Frango Assado" },
+  { id: "p0031", nivel: "Zouk-1", secao: "4 Fundamentos da Cabeça", texto: "Cabeça Inclinada (giros)" },
+  { id: "p0032", nivel: "Zouk-1", secao: "4 Fundamentos da Cabeça", texto: "Bate Cabelo" },
+  { id: "p0033", nivel: "Zouk-1", secao: "Movimentos Principais", texto: "Viradinha 360º" },
+  { id: "p0034", nivel: "Zouk-1", secao: "Movimentos Principais", texto: "Rau lateral (movimentação de Ryu)" },
+  { id: "p0035", nivel: "Zouk-1", secao: "Movimentos Principais", texto: "Balão (parado, deslocamento, frente-trás, corredor, rau lateral)" },
+  { id: "p0036", nivel: "Zouk-1", secao: "Movimentos Principais", texto: "Ioiô 360º" },
+  { id: "p0037", nivel: "Zouk-1", secao: "Movimentos Principais", texto: "Boneca" },
+  { id: "p0038", nivel: "Zouk-1", secao: "Movimentos Principais", texto: "Dadinho" },
+  { id: "p0039", nivel: "Zouk-1", secao: "Variações e Combinações", texto: "Gostosinho (mão direita / esquerda)" },
+  { id: "p0040", nivel: "Zouk-1", secao: "Variações e Combinações", texto: "Soltinho (caminhada — Amanda)" },
+  { id: "p0041", nivel: "Zouk-1", secao: "Variações e Combinações", texto: "Bônus (caminhada, inclinado, espiral com cabeça, helicóptero)" },
+  { id: "p0042", nivel: "Zouk-1", secao: "Variações e Combinações", texto: "Rau do Ioiô (vai e volta com cabeça — Dudu)" },
+  { id: "p0043", nivel: "Zouk-1", secao: "Variações e Combinações", texto: "Ioiô com rau frente-trás" },
+  { id: "p0044", nivel: "Zouk-1", secao: "Variações e Combinações", texto: "Ioiô com giro no eixo (Val & Vanessa Embraza)" },
+  { id: "p0045", nivel: "Zouk-1", secao: "Frango Assado (variações)", texto: "No lugar (abençoando)" },
+  { id: "p0046", nivel: "Zouk-1", secao: "Frango Assado (variações)", texto: "No lugar (manivela)" },
+  { id: "p0047", nivel: "Zouk-1", secao: "Frango Assado (variações)", texto: "Variação do condutor" },
+  { id: "p0048", nivel: "Zouk-1", secao: "Frango Assado (variações)", texto: "Avião da condutora (Nina & Matheus)" },
+  { id: "p0049", nivel: "Zouk-1", secao: "Sequências", texto: "Val & Vanessa: balão + penteado + S + corredor + giro eixo + rau + meia boneca + saída balões + frango assado + cambre lateral" },
+  { id: "p0050", nivel: "Zouk-1", secao: "Sequências", texto: "Zouk Sense (Renata Pessanha): viradinha + ioiô 360º + giro condutor + avião condutora" },
+  { id: "p0051", nivel: "Zouk-1", secao: "Sequências", texto: "Dadinho & Imaculada Liberty: abertura L + corredor de costas + sequência planos" },
+  { id: "p0052", nivel: "Zouk-1", secao: "Musicalidade", texto: "Musicalidade II" },
+  // Zouk-2 — Iniciados
+  { id: "p0053", nivel: "Zouk-2", secao: "Musicalidade", texto: "Musicalidade III (bom, tic tic)" },
+  { id: "p0054", nivel: "Zouk-2", secao: "Musicalidade", texto: "Conjunto Drop (Linear, Eco, Explosivo) — 15x3" },
+  { id: "p0055", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Giro no eixo" },
+  { id: "p0056", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Giro contínuo" },
+  { id: "p0057", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Giro duplo" },
+  { id: "p0058", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Colgado" },
+  { id: "p0059", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Torção" },
+  { id: "p0060", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Toalha tradicional" },
+  { id: "p0061", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Boneca com balão (xitão)" },
+  { id: "p0062", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Boneca desprezada (+ variações: chão, normal, queda, mão, estrelinha)" },
+  { id: "p0063", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Bônus direita" },
+  { id: "p0064", nivel: "Zouk-2", secao: "Movimentos / Fundamentos Revisados", texto: "Caminhada com cabeça" },
+  { id: "p0065", nivel: "Zouk-2", secao: "Variações", texto: "Gostosinho (mão esquerda + trava cintura + saída S)" },
+  { id: "p0066", nivel: "Zouk-2", secao: "Variações", texto: "Rau/trava (troca de mãos, axila, aviãozinho)" },
+  { id: "p0067", nivel: "Zouk-2", secao: "Variações", texto: "Chicote (2x, 3x, cima/baixo)" },
+  { id: "p0068", nivel: "Zouk-2", secao: "Variações", texto: "Pião + variações" },
+  { id: "p0069", nivel: "Zouk-2", secao: "Variações", texto: "Caminhada com chicote" },
+  { id: "p0070", nivel: "Zouk-2", secao: "Variações", texto: "Movimentação com condutor atrás da follow" },
+  { id: "p0071", nivel: "Zouk-2", secao: "Sequências e Aulas Especiais", texto: "Rafael & Isa (Rio)" },
+  { id: "p0072", nivel: "Zouk-2", secao: "Sequências e Aulas Especiais", texto: "Dan (Giro giratório + twittado, frango assado + balão)" },
+  { id: "p0073", nivel: "Zouk-2", secao: "Sequências e Aulas Especiais", texto: "Tracy & Cloves (travas + giro condutor)" },
+  { id: "p0074", nivel: "Zouk-2", secao: "Sequências e Aulas Especiais", texto: "Zouk Sense Master Class 2022" },
+  { id: "p0075", nivel: "Zouk-2", secao: "Sequências e Aulas Especiais", texto: "Aula da gente (Contra balanço I e II)" },
+  { id: "p0076", nivel: "Zouk-2", secao: "Sequências e Aulas Especiais", texto: "Aula 17/07/24 (Corredor troca de mão lateral sem alterar frente/trás)" },
+  { id: "p0077", nivel: "Zouk-2", secao: "Movimentos Extras", texto: "Sarada (+ variação)" },
+  { id: "p0078", nivel: "Zouk-2", secao: "Movimentos Extras", texto: "Brincadeiras (cintura, chutes etc.)" },
+  // Zouk-3 — Intermediário
+  { id: "p0079", nivel: "Zouk-3", secao: "Musicalidade", texto: "Conjunto Drop (Linear, Eco, Explosivo) — 15x3" },
+  { id: "p0080", nivel: "Zouk-3", secao: "Musicalidade", texto: "Estudo Musicalidade III" },
+  { id: "p0081", nivel: "Zouk-3", secao: "Musicalidade", texto: "Drop II" },
+  { id: "p0082", nivel: "Zouk-3", secao: "Revisões / Consolidação", texto: "Boneca desprezada (todas variações)" },
+  { id: "p0083", nivel: "Zouk-3", secao: "Revisões / Consolidação", texto: "Boneca normal (balão simples, braço levantado)" },
+  { id: "p0084", nivel: "Zouk-3", secao: "Revisões / Consolidação", texto: "Tornado" },
+  { id: "p0085", nivel: "Zouk-3", secao: "Revisões / Consolidação", texto: "Toalha com mão esquerda" },
+  { id: "p0086", nivel: "Zouk-3", secao: "Revisões / Consolidação", texto: "Toalha invertida (vinda do bônus/xitão)" },
+  { id: "p0087", nivel: "Zouk-3", secao: "Revisões / Consolidação", texto: "Giro duplo (com variações e aplicação)" },
+  { id: "p0088", nivel: "Zouk-3", secao: "Movimentos com Cabeça", texto: "Variações de cabeça (espiral, inclinado, helicóptero, ondulações)" },
+  { id: "p0089", nivel: "Zouk-3", secao: "Movimentos com Cabeça", texto: "Trabalho de cabeça integrado ao giro duplo" },
+  { id: "p0090", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Xitão" },
+  { id: "p0091", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Sequência Ellisson (música Tropical)" },
+  { id: "p0092", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Balão com estrelinhas (final boneca desprezada)" },
+  { id: "p0093", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Balão abraçado → frango assado (trava cintura)" },
+  { id: "p0094", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Ioiô com trava axila → aviãozinho → travas e cambres" },
+  { id: "p0095", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Travas frente-trás (swig) com trava cintura" },
+  { id: "p0096", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Clover no CG Zouk" },
+  { id: "p0097", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Ioiô fechado, entrando na cabeça com trava → helicóptero em linha" },
+  { id: "p0098", nivel: "Zouk-3", secao: "Novas Movimentações", texto: "Bônus com trava no final entrando helicóptero em linha (lento)" },
+  { id: "p0099", nivel: "Zouk-3", secao: "Sequências e Aulas Especiais", texto: "Ale & Vic: ioiô fechado, pegando na mão, giros no balão e frango assado, finalizando no chicote" },
+  { id: "p0100", nivel: "Zouk-3", secao: "Sequências e Aulas Especiais", texto: "Movimentação de Xitão: bonecas com balão e frango assado, finalizando num chicote" },
+  { id: "p0101", nivel: "Zouk-3", secao: "Sequências e Aulas Especiais", texto: "Movimentação de Nayara: gostosinho com mão, giro no eixo, trabalhando movimentação de cabeça através do tronco" },
+  { id: "p0102", nivel: "Zouk-3", secao: "Variações Estilizadas", texto: "Gostosinho por cima + giro no balão → cambre" },
+  { id: "p0103", nivel: "Zouk-3", secao: "Variações Estilizadas", texto: "Boneca desprezada (passando por baixo, giro com mão na cabeça, final cambre)" },
+  { id: "p0104", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Estruturas básicas" },
+  { id: "p0105", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Finalizar em cada tempo" },
+  { id: "p0106", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Preencher as bases com pisadas: Frente e trás" },
+  { id: "p0107", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Preencher as bases com pisadas: Elástico" },
+  { id: "p0108", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Base do bônus" },
+  { id: "p0109", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Pisadas do bônus e ioiô" },
+  { id: "p0110", nivel: "Zouk-3", secao: "J&J — Estruturas", texto: "Caminhada no bom tic e tic" },
+  { id: "p0111", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Bônus para a direita (2x)" },
+  { id: "p0112", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Bônus para a esquerda" },
+  { id: "p0113", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Giro simples" },
+  { id: "p0114", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Giro duplo" },
+  { id: "p0115", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Giro duplo no bônus" },
+  { id: "p0116", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Giro duplo no soltinho (ambos)" },
+  { id: "p0117", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Dentro para fora" },
+  { id: "p0118", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Fora para dentro" },
+  { id: "p0119", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Preparação da boneca" },
+  { id: "p0120", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Preparação da movimentação de cabeça" },
+  { id: "p0121", nivel: "Zouk-3", secao: "J&J — Bônus", texto: "Preparação do movimento com o corpo" },
+  { id: "p0122", nivel: "Zouk-3", secao: "J&J — Técnicas", texto: "Fechar as pernas" },
+  { id: "p0123", nivel: "Zouk-3", secao: "J&J — Técnicas", texto: "Gostosinho sem mão" },
+  { id: "p0124", nivel: "Zouk-3", secao: "J&J — Musicalidade", texto: "Marcação de ritmo" },
+  { id: "p0125", nivel: "Zouk-3", secao: "J&J — Musicalidade", texto: "Identificar o 1 e o 5 como sílabas tônicas da música" },
+  { id: "p0126", nivel: "Zouk-3", secao: "J&J — Personagem", texto: "Trabalhar tipos de personagem no J&J" },
+  { id: "p0127", nivel: "Zouk-3", secao: "J&J — Personagem", texto: "Encontrar o 1 e o 5 nas músicas" },
+  { id: "p0128", nivel: "Zouk-3", secao: "J&J — Exercícios", texto: "Dinâmica em dupla de costas marcando" },
+  { id: "p0129", nivel: "Zouk-3", secao: "J&J — Exercícios", texto: "Contar sempre, mesmo quando não tem batida — movimentações sempre em: 1, 3, 5, 7" },
+  { id: "p0130", nivel: "Zouk-3", secao: "J&J — Conteúdo", texto: "Contra criativo: substituir o contra da base por um elemento criativo, mantendo a estrutura da base" },
+  { id: "p0131", nivel: "Zouk-3", secao: "J&J — Conteúdo", texto: "Finalizações em pausa: utilizar o próximo contra como espaço de criatividade antes de recuperar a marcação" },
+  { id: "p0132", nivel: "Zouk-3", secao: "J&J — Conteúdo", texto: "Aceleração para marcação musical: antecipar elementos específicos da música para encaixar a movimentação" },
+  { id: "p0133", nivel: "Zouk-3", secao: "J&J — Conteúdo", texto: "Interromper movimentos: aprender a finalizar musicalmente em qualquer ponto do movimento utilizando pausas" },
+];
+
 function getValor(aluno) {
   const base = aluno.mensalidade ?? DEFAULT_MENSALIDADE;
   const bruto = base * TIPO_LABELS[aluno.tipo].valor;
@@ -43,10 +188,14 @@ function loadData() {
     const raw = localStorage.getItem("zoukme_v1");
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { frequencia: {}, ...parsed };
+      return {
+        frequencia: {},
+        ...parsed,
+        planoAula: parsed.planoAula || { itens: PLANO_INICIAL, marcados: {} },
+      };
     }
   } catch {}
-  return { alunos: [], pagamentos: {}, frequencia: {} };
+  return { alunos: [], pagamentos: {}, frequencia: {}, planoAula: { itens: PLANO_INICIAL, marcados: {} } };
 }
 
 function saveData(data) {
@@ -65,6 +214,8 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [busca, setBusca] = useState("");
   const [buscaFoco, setBuscaFoco] = useState(false);
+  const [planoModalOpen, setPlanoModalOpen] = useState(false);
+  const [editPlanoItem, setEditPlanoItem] = useState(null);
 
   const now = new Date();
   const [mesSel, setMesSel] = useState(now.getMonth());
@@ -128,6 +279,52 @@ export default function App() {
   function deletarAluno(id) {
     setData(d => ({ ...d, alunos: d.alunos.filter(a => a.id !== id) }));
     setConfirmDelete(null);
+  }
+
+  function toggleMarcado(id) {
+    setData(d => ({
+      ...d,
+      planoAula: {
+        ...d.planoAula,
+        marcados: { ...d.planoAula.marcados, [id]: !d.planoAula.marcados[id] },
+      },
+    }));
+  }
+
+  function salvarPlanoItem(form) {
+    if (form.id) {
+      setData(d => ({
+        ...d,
+        planoAula: {
+          ...d.planoAula,
+          itens: d.planoAula.itens.map(i => i.id === form.id ? { ...i, ...form } : i),
+        },
+      }));
+    } else {
+      const novo = { ...form, id: "p" + Date.now() };
+      setData(d => ({
+        ...d,
+        planoAula: {
+          ...d.planoAula,
+          itens: [...d.planoAula.itens, novo],
+        },
+      }));
+    }
+    setPlanoModalOpen(false);
+    setEditPlanoItem(null);
+  }
+
+  function deletarPlanoItem(id) {
+    setData(d => {
+      const { [id]: _, ...restoMarcados } = d.planoAula.marcados;
+      return {
+        ...d,
+        planoAula: {
+          itens: d.planoAula.itens.filter(i => i.id !== id),
+          marcados: restoMarcados,
+        },
+      };
+    });
   }
 
   function toggleAtivo(id) {
@@ -202,7 +399,7 @@ export default function App() {
           </div>
           <p style={{ fontSize: 12, color: COLORS.textDim, margin: "0 0 16px", letterSpacing: 1, textTransform: "uppercase" }}>Controle de Mensalidades</p>
           <div style={{ display: "flex", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            {[["mensal","Mensal"],["niveis","Níveis"],["frequencia","Frequência"],["alunos","Alunos"],["inativos","Inativos"]].map(([t, label]) => (
+            {[["mensal","Mensal"],["niveis","Níveis"],["frequencia","Frequência"],["plano","Plano"],["alunos","Alunos"],["inativos","Inativos"]].map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 background: "none", border: "none", cursor: "pointer",
                 padding: "8px 16px", fontSize: 13, fontWeight: 600,
@@ -541,6 +738,145 @@ export default function App() {
           );
         })()}
 
+        {/* TAB PLANO DE AULA */}
+        {tab === "plano" && (() => {
+          const plano = data.planoAula || { itens: PLANO_INICIAL, marcados: {} };
+          const totalItens = plano.itens.length;
+          const totalMarcados = plano.itens.filter(i => plano.marcados[i.id]).length;
+          const progGeral = totalItens > 0 ? (totalMarcados / totalItens) * 100 : 0;
+
+          return (
+            <div>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>Plano de Aula</div>
+                  <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>
+                    {totalMarcados} de {totalItens} conteúdos dados
+                  </div>
+                </div>
+                <button onClick={() => { setEditPlanoItem(null); setPlanoModalOpen(true); }} style={{
+                  background: COLORS.gold, color: "#0D0D0F", border: "none", borderRadius: 8,
+                  padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", flexShrink: 0,
+                }}>
+                  + Adicionar
+                </button>
+              </div>
+
+              {/* Barra de progresso geral */}
+              <div style={{
+                background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                borderRadius: 10, padding: "12px 16px", marginBottom: 24,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: COLORS.textMuted }}>
+                  <span style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Progresso geral</span>
+                  <span style={{ color: COLORS.gold, fontWeight: 700 }}>{progGeral.toFixed(0)}%</span>
+                </div>
+                <div style={{ height: 7, background: COLORS.border, borderRadius: 99, overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", borderRadius: 99,
+                    width: `${progGeral}%`,
+                    background: `linear-gradient(90deg, ${COLORS.goldDim}, ${COLORS.gold})`,
+                    transition: "width 0.5s ease",
+                  }} />
+                </div>
+              </div>
+
+              {/* Níveis */}
+              {NIVEIS_ZOUK.map(nivel => {
+                const itensNivel = plano.itens.filter(i => i.nivel === nivel);
+                if (itensNivel.length === 0) return null;
+                const marcadosNivel = itensNivel.filter(i => plano.marcados[i.id]).length;
+                const pctNivel = itensNivel.length > 0 ? (marcadosNivel / itensNivel.length) * 100 : 0;
+                const secoes = [...new Set(itensNivel.map(i => i.secao))];
+                const cor = NIVEL_CORES[nivel];
+
+                return (
+                  <div key={nivel} style={{ marginBottom: 28 }}>
+                    {/* Header do nível */}
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
+                      padding: "11px 14px",
+                      background: COLORS.surface, border: `1px solid ${cor}33`,
+                      borderRadius: 10, borderLeft: `3px solid ${cor}`,
+                    }}>
+                      <span style={{ fontSize: 18 }}>{NIVEL_EMOJI[nivel]}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: cor }}>{nivel}</div>
+                        <div style={{ fontSize: 11, color: COLORS.textDim }}>{NIVEL_NOMES[nivel]}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: cor }}>{pctNivel.toFixed(0)}%</div>
+                        <div style={{ fontSize: 10, color: COLORS.textDim }}>{marcadosNivel}/{itensNivel.length}</div>
+                      </div>
+                      <div style={{ width: 50, height: 5, background: COLORS.border, borderRadius: 99, overflow: "hidden", flexShrink: 0 }}>
+                        <div style={{ height: "100%", borderRadius: 99, width: `${pctNivel}%`, background: cor, transition: "width 0.4s ease" }} />
+                      </div>
+                    </div>
+
+                    {/* Seções */}
+                    {secoes.map(secao => {
+                      const itensSec = itensNivel.filter(i => i.secao === secao);
+                      return (
+                        <div key={secao} style={{ marginBottom: 16, paddingLeft: 6 }}>
+                          <div style={{
+                            fontSize: 10, fontWeight: 700, color: COLORS.textDim,
+                            textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6,
+                          }}>
+                            {secao}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            {itensSec.map(item => {
+                              const marcado = plano.marcados[item.id] === true;
+                              return (
+                                <div key={item.id} style={{
+                                  display: "flex", alignItems: "center", gap: 10,
+                                  background: COLORS.surface,
+                                  border: `1px solid ${marcado ? cor + "55" : COLORS.border}`,
+                                  borderRadius: 8, padding: "9px 12px",
+                                  transition: "all 0.15s",
+                                }}>
+                                  <button onClick={() => toggleMarcado(item.id)} style={{
+                                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                                    border: `2px solid ${marcado ? cor : COLORS.border}`,
+                                    background: marcado ? cor : "transparent",
+                                    cursor: "pointer",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    color: "#fff", fontSize: 11, fontWeight: 700, transition: "all 0.15s",
+                                  }}>
+                                    {marcado ? "✓" : ""}
+                                  </button>
+                                  <div style={{
+                                    flex: 1, fontSize: 13, lineHeight: 1.4,
+                                    color: marcado ? COLORS.textDim : COLORS.text,
+                                    textDecoration: marcado ? "line-through" : "none",
+                                  }}>
+                                    {item.texto}
+                                  </div>
+                                  <button onClick={() => { setEditPlanoItem(item); setPlanoModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
+                                  <button onClick={() => deletarPlanoItem(item.id)} style={btnIcon} title="Remover">🗑️</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+
+              {totalItens === 0 && (
+                <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🎶</div>
+                  <div style={{ fontSize: 14 }}>Nenhum conteúdo no plano ainda.</div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>Clique em "+ Adicionar" para começar.</div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* TAB ALUNOS */}
         {tab === "alunos" && (
           <div>
@@ -745,6 +1081,15 @@ export default function App() {
         )}
       </div>
 
+      {/* MODAL Plano de Aula */}
+      {planoModalOpen && (
+        <PlanoModal
+          item={editPlanoItem}
+          onSave={salvarPlanoItem}
+          onClose={() => { setPlanoModalOpen(false); setEditPlanoItem(null); }}
+        />
+      )}
+
       {/* MODAL Aluno */}
       {modalOpen && (
         <Modal
@@ -885,6 +1230,74 @@ function Modal({ aluno, onSave, onClose, onToggleAtivo }) {
         <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
           <button onClick={onClose} style={{ ...btnSec, flex: 1 }}>Cancelar</button>
           <button onClick={submit} style={{ ...btnPrimary, flex: 1 }} disabled={!form.nome.trim() || form.nivel === ""}>
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlanoModal({ item, onSave, onClose }) {
+  const [form, setForm] = useState({
+    texto: item?.texto || "",
+    nivel: item?.nivel || "Zouk-0",
+    secao: item?.secao || "",
+    id: item?.id || null,
+  });
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  function submit() {
+    if (!form.texto.trim() || !form.secao.trim()) return;
+    onSave(form);
+  }
+
+  return (
+    <div style={overlayStyle}>
+      <div style={{ ...modalBox, maxWidth: 460 }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 20, color: COLORS.gold }}>
+          {item ? "Editar Conteúdo" : "Novo Conteúdo"}
+        </div>
+
+        <label style={lbl}>Descrição do conteúdo</label>
+        <textarea
+          style={{ ...inp, height: 80, resize: "vertical", fontFamily: "inherit" }}
+          value={form.texto}
+          onChange={e => set("texto", e.target.value)}
+          placeholder="Ex: Giro duplo no bônus"
+        />
+
+        <label style={lbl}>Nível</label>
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+          {NIVEIS_ZOUK.map(n => (
+            <button key={n} onClick={() => set("nivel", n)} style={{
+              flex: 1, padding: "8px 4px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer",
+              border: `1.5px solid ${form.nivel === n ? NIVEL_CORES[n] : COLORS.border}`,
+              background: form.nivel === n ? NIVEL_CORES[n] + "22" : "transparent",
+              color: form.nivel === n ? NIVEL_CORES[n] : COLORS.textMuted,
+              transition: "all 0.15s", minWidth: 60,
+            }}>
+              {NIVEL_EMOJI[n]} {n}
+            </button>
+          ))}
+        </div>
+
+        <label style={lbl}>Seção</label>
+        <input
+          style={inp}
+          value={form.secao}
+          onChange={e => set("secao", e.target.value)}
+          placeholder="Ex: Movimentos Principais"
+        />
+
+        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <button onClick={onClose} style={{ ...btnSec, flex: 1 }}>Cancelar</button>
+          <button
+            onClick={submit}
+            style={{ ...btnPrimary, flex: 1, opacity: (!form.texto.trim() || !form.secao.trim()) ? 0.5 : 1 }}
+            disabled={!form.texto.trim() || !form.secao.trim()}
+          >
             Salvar
           </button>
         </div>

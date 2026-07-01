@@ -216,6 +216,7 @@ export default function App() {
   const [buscaFoco, setBuscaFoco] = useState(false);
   const [planoModalOpen, setPlanoModalOpen] = useState(false);
   const [editPlanoItem, setEditPlanoItem] = useState(null);
+  const [planoSubTab, setPlanoSubTab] = useState("geral");
 
   const now = new Date();
   const [mesSel, setMesSel] = useState(now.getMonth());
@@ -745,117 +746,272 @@ export default function App() {
           const totalMarcados = plano.itens.filter(i => plano.marcados[i.id]).length;
           const progGeral = totalItens > 0 ? (totalMarcados / totalItens) * 100 : 0;
 
+          // Níveis presentes nos itens, ordenados
+          const niveisPresentes = [...new Set(plano.itens.map(i => i.nivel))].sort();
+
+          // Garante que subTab seja válido
+          const subTabAtual = planoSubTab;
+
           return (
             <div>
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>Plano de Aula</div>
-                  <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>
-                    {totalMarcados} de {totalItens} conteúdos dados
-                  </div>
-                </div>
-                <button onClick={() => { setEditPlanoItem(null); setPlanoModalOpen(true); }} style={{
-                  background: COLORS.gold, color: "#0D0D0F", border: "none", borderRadius: 8,
-                  padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", flexShrink: 0,
-                }}>
-                  + Adicionar
-                </button>
-              </div>
-
-              {/* Barra de progresso geral */}
+              {/* Sub-navegação por nível */}
               <div style={{
-                background: COLORS.surface, border: `1px solid ${COLORS.border}`,
-                borderRadius: 10, padding: "12px 16px", marginBottom: 24,
+                display: "flex", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none", msOverflowStyle: "none",
+                borderBottom: `1px solid ${COLORS.border}`, marginBottom: 20, marginLeft: -24, marginRight: -24, paddingLeft: 24,
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: COLORS.textMuted }}>
-                  <span style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Progresso geral</span>
-                  <span style={{ color: COLORS.gold, fontWeight: 700 }}>{progGeral.toFixed(0)}%</span>
-                </div>
-                <div style={{ height: 7, background: COLORS.border, borderRadius: 99, overflow: "hidden" }}>
-                  <div style={{
-                    height: "100%", borderRadius: 99,
-                    width: `${progGeral}%`,
-                    background: `linear-gradient(90deg, ${COLORS.goldDim}, ${COLORS.gold})`,
-                    transition: "width 0.5s ease",
-                  }} />
-                </div>
+                {/* Aba Geral */}
+                <button onClick={() => setPlanoSubTab("geral")} style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  padding: "8px 14px", fontSize: 12, fontWeight: 600,
+                  color: subTabAtual === "geral" ? COLORS.gold : COLORS.textMuted,
+                  borderBottom: subTabAtual === "geral" ? `2px solid ${COLORS.gold}` : "2px solid transparent",
+                  whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
+                }}>
+                  Geral
+                </button>
+                {/* Abas por nível */}
+                {niveisPresentes.map(nivel => {
+                  const itensN = plano.itens.filter(i => i.nivel === nivel);
+                  const marcN = itensN.filter(i => plano.marcados[i.id]).length;
+                  const cor = NIVEL_CORES[nivel] || COLORS.textMuted;
+                  const emoji = NIVEL_EMOJI[nivel] || "⚪";
+                  const ativo = subTabAtual === nivel;
+                  return (
+                    <button key={nivel} onClick={() => setPlanoSubTab(nivel)} style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      padding: "8px 14px", fontSize: 12, fontWeight: 600,
+                      color: ativo ? cor : COLORS.textMuted,
+                      borderBottom: ativo ? `2px solid ${cor}` : "2px solid transparent",
+                      whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
+                    }}>
+                      {emoji} {nivel}
+                      <span style={{
+                        marginLeft: 5, fontSize: 10, fontWeight: 700,
+                        color: ativo ? cor : COLORS.textDim,
+                      }}>
+                        {marcN}/{itensN.length}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Níveis */}
-              {NIVEIS_ZOUK.map(nivel => {
+              {/* ===== SUB-ABA GERAL (CRUD) ===== */}
+              {subTabAtual === "geral" && (
+                <div>
+                  {/* Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, color: COLORS.textMuted }}>
+                      {totalMarcados} de {totalItens} conteúdos marcados
+                    </div>
+                    <button onClick={() => { setEditPlanoItem(null); setPlanoModalOpen(true); }} style={{
+                      background: COLORS.gold, color: "#0D0D0F", border: "none", borderRadius: 8,
+                      padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    }}>
+                      + Adicionar
+                    </button>
+                  </div>
+
+                  {/* Barra de progresso geral */}
+                  <div style={{
+                    background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                    borderRadius: 10, padding: "12px 16px", marginBottom: 20,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: COLORS.textMuted }}>
+                      <span style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Progresso geral</span>
+                      <span style={{ color: COLORS.gold, fontWeight: 700 }}>{progGeral.toFixed(0)}%</span>
+                    </div>
+                    <div style={{ height: 6, background: COLORS.border, borderRadius: 99, overflow: "hidden", marginBottom: 12 }}>
+                      <div style={{
+                        height: "100%", borderRadius: 99, width: `${progGeral}%`,
+                        background: `linear-gradient(90deg, ${COLORS.goldDim}, ${COLORS.gold})`,
+                        transition: "width 0.5s ease",
+                      }} />
+                    </div>
+                    {/* Mini progresso por nível */}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {niveisPresentes.map(nivel => {
+                        const itN = plano.itens.filter(i => i.nivel === nivel);
+                        const mkN = itN.filter(i => plano.marcados[i.id]).length;
+                        const pN = itN.length > 0 ? (mkN / itN.length) * 100 : 0;
+                        const cor = NIVEL_CORES[nivel] || COLORS.textMuted;
+                        return (
+                          <button key={nivel} onClick={() => setPlanoSubTab(nivel)} style={{
+                            flex: 1, minWidth: 80, background: COLORS.surfaceHover,
+                            border: `1px solid ${cor}33`, borderRadius: 8, padding: "8px 10px",
+                            cursor: "pointer", textAlign: "left",
+                          }}>
+                            <div style={{ fontSize: 10, color: cor, fontWeight: 700, marginBottom: 4 }}>
+                              {NIVEL_EMOJI[nivel] || "⚪"} {nivel}
+                            </div>
+                            <div style={{ height: 4, background: COLORS.border, borderRadius: 99, overflow: "hidden", marginBottom: 3 }}>
+                              <div style={{ height: "100%", borderRadius: 99, width: `${pN}%`, background: cor }} />
+                            </div>
+                            <div style={{ fontSize: 9, color: COLORS.textDim }}>{mkN}/{itN.length} · {pN.toFixed(0)}%</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Lista completa com CRUD */}
+                  {niveisPresentes.map(nivel => {
+                    const itensNivel = plano.itens.filter(i => i.nivel === nivel);
+                    const secoes = [...new Set(itensNivel.map(i => i.secao))];
+                    const cor = NIVEL_CORES[nivel] || COLORS.textMuted;
+                    return (
+                      <div key={nivel} style={{ marginBottom: 24 }}>
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
+                          padding: "8px 12px",
+                          background: COLORS.surface, border: `1px solid ${cor}33`,
+                          borderRadius: 8, borderLeft: `3px solid ${cor}`,
+                        }}>
+                          <span>{NIVEL_EMOJI[nivel] || "⚪"}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: cor }}>{nivel}</span>
+                          <span style={{ fontSize: 11, color: COLORS.textDim }}>— {NIVEL_NOMES[nivel] || ""}</span>
+                        </div>
+                        {secoes.map(secao => (
+                          <div key={secao} style={{ marginBottom: 12, paddingLeft: 4 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+                              {secao}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              {itensNivel.filter(i => i.secao === secao).map(item => {
+                                const marcado = plano.marcados[item.id] === true;
+                                return (
+                                  <div key={item.id} style={{
+                                    display: "flex", alignItems: "center", gap: 9,
+                                    background: COLORS.surface,
+                                    border: `1px solid ${marcado ? cor + "44" : COLORS.border}`,
+                                    borderRadius: 7, padding: "8px 10px", transition: "all 0.15s",
+                                  }}>
+                                    <button onClick={() => toggleMarcado(item.id)} style={{
+                                      width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                                      border: `2px solid ${marcado ? cor : COLORS.border}`,
+                                      background: marcado ? cor : "transparent",
+                                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                      color: "#fff", fontSize: 10, fontWeight: 700, transition: "all 0.15s",
+                                    }}>
+                                      {marcado ? "✓" : ""}
+                                    </button>
+                                    <div style={{
+                                      flex: 1, fontSize: 13, lineHeight: 1.4,
+                                      color: marcado ? COLORS.textDim : COLORS.text,
+                                      textDecoration: marcado ? "line-through" : "none",
+                                    }}>
+                                      {item.texto}
+                                    </div>
+                                    <button onClick={() => { setEditPlanoItem(item); setPlanoModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
+                                    <button onClick={() => deletarPlanoItem(item.id)} style={btnIcon} title="Remover">🗑️</button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+
+                  {totalItens === 0 && (
+                    <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
+                      <div style={{ fontSize: 36, marginBottom: 12 }}>🎶</div>
+                      <div style={{ fontSize: 14 }}>Nenhum conteúdo no plano ainda.</div>
+                      <div style={{ fontSize: 12, marginTop: 4 }}>Clique em "+ Adicionar" para começar.</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ===== SUB-ABA DE NÍVEL (checkboxes) ===== */}
+              {subTabAtual !== "geral" && niveisPresentes.includes(subTabAtual) && (() => {
+                const nivel = subTabAtual;
+                const cor = NIVEL_CORES[nivel] || COLORS.textMuted;
+                const emoji = NIVEL_EMOJI[nivel] || "⚪";
                 const itensNivel = plano.itens.filter(i => i.nivel === nivel);
-                if (itensNivel.length === 0) return null;
                 const marcadosNivel = itensNivel.filter(i => plano.marcados[i.id]).length;
                 const pctNivel = itensNivel.length > 0 ? (marcadosNivel / itensNivel.length) * 100 : 0;
                 const secoes = [...new Set(itensNivel.map(i => i.secao))];
-                const cor = NIVEL_CORES[nivel];
 
                 return (
-                  <div key={nivel} style={{ marginBottom: 28 }}>
-                    {/* Header do nível */}
+                  <div>
+                    {/* Cabeçalho do nível */}
                     <div style={{
-                      display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
-                      padding: "11px 14px",
                       background: COLORS.surface, border: `1px solid ${cor}33`,
-                      borderRadius: 10, borderLeft: `3px solid ${cor}`,
+                      borderRadius: 12, padding: "16px 18px", marginBottom: 20,
+                      borderLeft: `4px solid ${cor}`,
                     }}>
-                      <span style={{ fontSize: 18 }}>{NIVEL_EMOJI[nivel]}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: cor }}>{nivel}</div>
-                        <div style={{ fontSize: 11, color: COLORS.textDim }}>{NIVEL_NOMES[nivel]}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <span style={{ fontSize: 22 }}>{emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: cor }}>{nivel}</div>
+                          <div style={{ fontSize: 12, color: COLORS.textDim }}>{NIVEL_NOMES[nivel] || ""}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: cor }}>{pctNivel.toFixed(0)}%</div>
+                          <div style={{ fontSize: 11, color: COLORS.textDim }}>{marcadosNivel} de {itensNivel.length}</div>
+                        </div>
                       </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: cor }}>{pctNivel.toFixed(0)}%</div>
-                        <div style={{ fontSize: 10, color: COLORS.textDim }}>{marcadosNivel}/{itensNivel.length}</div>
-                      </div>
-                      <div style={{ width: 50, height: 5, background: COLORS.border, borderRadius: 99, overflow: "hidden", flexShrink: 0 }}>
-                        <div style={{ height: "100%", borderRadius: 99, width: `${pctNivel}%`, background: cor, transition: "width 0.4s ease" }} />
+                      <div style={{ height: 8, background: COLORS.border, borderRadius: 99, overflow: "hidden" }}>
+                        <div style={{
+                          height: "100%", borderRadius: 99, width: `${pctNivel}%`,
+                          background: cor, transition: "width 0.5s ease",
+                        }} />
                       </div>
                     </div>
 
-                    {/* Seções */}
+                    {/* Seções com checkboxes */}
                     {secoes.map(secao => {
                       const itensSec = itensNivel.filter(i => i.secao === secao);
+                      const marcSec = itensSec.filter(i => plano.marcados[i.id]).length;
                       return (
-                        <div key={secao} style={{ marginBottom: 16, paddingLeft: 6 }}>
+                        <div key={secao} style={{ marginBottom: 18 }}>
                           <div style={{
-                            fontSize: 10, fontWeight: 700, color: COLORS.textDim,
-                            textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6,
+                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                            marginBottom: 7,
                           }}>
-                            {secao}
+                            <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                              {secao}
+                            </div>
+                            <div style={{ fontSize: 10, color: cor, fontWeight: 600 }}>
+                              {marcSec}/{itensSec.length}
+                            </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {itensSec.map(item => {
                               const marcado = plano.marcados[item.id] === true;
                               return (
-                                <div key={item.id} style={{
-                                  display: "flex", alignItems: "center", gap: 10,
-                                  background: COLORS.surface,
-                                  border: `1px solid ${marcado ? cor + "55" : COLORS.border}`,
-                                  borderRadius: 8, padding: "9px 12px",
-                                  transition: "all 0.15s",
-                                }}>
-                                  <button onClick={() => toggleMarcado(item.id)} style={{
-                                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                                <button
+                                  key={item.id}
+                                  onClick={() => toggleMarcado(item.id)}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 12,
+                                    background: marcado ? cor + "11" : COLORS.surface,
+                                    border: `1px solid ${marcado ? cor + "55" : COLORS.border}`,
+                                    borderRadius: 9, padding: "10px 14px",
+                                    cursor: "pointer", textAlign: "left", width: "100%",
+                                    transition: "all 0.15s",
+                                  }}
+                                >
+                                  <div style={{
+                                    width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                                     border: `2px solid ${marcado ? cor : COLORS.border}`,
                                     background: marcado ? cor : "transparent",
-                                    cursor: "pointer",
                                     display: "flex", alignItems: "center", justifyContent: "center",
-                                    color: "#fff", fontSize: 11, fontWeight: 700, transition: "all 0.15s",
+                                    color: "#fff", fontSize: 12, fontWeight: 800, transition: "all 0.15s",
                                   }}>
                                     {marcado ? "✓" : ""}
-                                  </button>
+                                  </div>
                                   <div style={{
-                                    flex: 1, fontSize: 13, lineHeight: 1.4,
+                                    flex: 1, fontSize: 13, lineHeight: 1.4, fontWeight: marcado ? 400 : 500,
                                     color: marcado ? COLORS.textDim : COLORS.text,
                                     textDecoration: marcado ? "line-through" : "none",
                                   }}>
                                     {item.texto}
                                   </div>
-                                  <button onClick={() => { setEditPlanoItem(item); setPlanoModalOpen(true); }} style={btnIcon} title="Editar">✏️</button>
-                                  <button onClick={() => deletarPlanoItem(item.id)} style={btnIcon} title="Remover">🗑️</button>
-                                </div>
+                                </button>
                               );
                             })}
                           </div>
@@ -864,15 +1020,7 @@ export default function App() {
                     })}
                   </div>
                 );
-              })}
-
-              {totalItens === 0 && (
-                <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>🎶</div>
-                  <div style={{ fontSize: 14 }}>Nenhum conteúdo no plano ainda.</div>
-                  <div style={{ fontSize: 12, marginTop: 4 }}>Clique em "+ Adicionar" para começar.</div>
-                </div>
-              )}
+              })()}
             </div>
           );
         })()}

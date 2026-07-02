@@ -488,58 +488,83 @@ export default function App() {
             ) : (
               niveisList.map(nivel => {
                 const grupo = alunosMes.filter(a => a.nivel === nivel);
+                // Pendentes primeiro, pagos no final
+                const pendentes = grupo.filter(a => !a.pago);
+                const pagos = grupo.filter(a => a.pago);
+
+                function renderCard(aluno) {
+                  const link = whatsappLink(aluno);
+                  return (
+                    <div key={aluno.id} style={{
+                      background: COLORS.surface,
+                      border: `1px solid ${aluno.pago ? COLORS.green + "33" : COLORS.border}`,
+                      borderRadius: 10, padding: "12px 14px",
+                      display: "flex", alignItems: "center", gap: 12,
+                      transition: "all 0.25s",
+                      opacity: aluno.pago ? 0.6 : 1,
+                    }}>
+                      {/* Checkbox */}
+                      {aluno.valor > 0 && (
+                        <button onClick={() => togglePago(aluno.id)} style={{
+                          width: 22, height: 22, borderRadius: 6, border: `2px solid ${aluno.pago ? COLORS.green : COLORS.border}`,
+                          background: aluno.pago ? COLORS.green : "transparent",
+                          cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "#fff", fontSize: 13, fontWeight: 700, transition: "all 0.15s",
+                        }}>
+                          {aluno.pago ? "✓" : ""}
+                        </button>
+                      )}
+                      {aluno.valor === 0 && (
+                        <div style={{ width: 22, height: 22, borderRadius: 6, background: COLORS.border, flexShrink: 0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color: COLORS.textDim }}>—</div>
+                      )}
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          textDecoration: aluno.pago ? "line-through" : "none",
+                          color: aluno.pago ? COLORS.textDim : COLORS.text,
+                        }}>{aluno.nome}</div>
+                        <div style={{ fontSize: 11, color: aluno.pago ? COLORS.textDim : TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>
+                          {aluno.pago ? "Pago" : TIPO_LABELS[aluno.tipo].label}
+                        </div>
+                      </div>
+                      {/* Valor */}
+                      <div style={{ fontSize: 15, fontWeight: 700, color: aluno.valor > 0 ? (aluno.pago ? COLORS.green : COLORS.text) : COLORS.textDim, marginRight: 8 }}>
+                        {aluno.valor > 0 ? `R$ ${aluno.valor.toFixed(2).replace(".",",")}` : "Gratuito"}
+                      </div>
+                      {/* WhatsApp — só para pendentes */}
+                      {link && !aluno.pago && (
+                        <a href={link} target="_blank" rel="noreferrer" style={{
+                          background: "#25D36622", color: "#25D366", border: "1px solid #25D36644",
+                          borderRadius: 7, padding: "5px 10px", fontSize: 12, fontWeight: 600,
+                          textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+                        }}>
+                          📲 Cobrar
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={nivel} style={{ marginBottom: 20 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
                       Nível {nivel}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {grupo.map(aluno => {
-                        const link = whatsappLink(aluno);
-                        return (
-                          <div key={aluno.id} style={{
-                            background: COLORS.surface,
-                            border: `1px solid ${aluno.pago ? COLORS.green + "44" : COLORS.border}`,
-                            borderRadius: 10, padding: "12px 14px",
-                            display: "flex", alignItems: "center", gap: 12,
-                            transition: "border 0.2s",
-                          }}>
-                            {/* Checkbox */}
-                            {aluno.valor > 0 && (
-                              <button onClick={() => togglePago(aluno.id)} style={{
-                                width: 22, height: 22, borderRadius: 6, border: `2px solid ${aluno.pago ? COLORS.green : COLORS.border}`,
-                                background: aluno.pago ? COLORS.green : "transparent",
-                                cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                                color: "#fff", fontSize: 13, fontWeight: 700, transition: "all 0.15s",
-                              }}>
-                                {aluno.pago ? "✓" : ""}
-                              </button>
-                            )}
-                            {aluno.valor === 0 && (
-                              <div style={{ width: 22, height: 22, borderRadius: 6, background: COLORS.border, flexShrink: 0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color: COLORS.textDim }}>—</div>
-                            )}
-                            {/* Info */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aluno.nome}</div>
-                              <div style={{ fontSize: 11, color: TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>{TIPO_LABELS[aluno.tipo].label}</div>
-                            </div>
-                            {/* Valor */}
-                            <div style={{ fontSize: 15, fontWeight: 700, color: aluno.valor > 0 ? (aluno.pago ? COLORS.green : COLORS.text) : COLORS.textDim, marginRight: 8 }}>
-                              {aluno.valor > 0 ? `R$ ${aluno.valor.toFixed(2).replace(".",",")}` : "Gratuito"}
-                            </div>
-                            {/* WhatsApp */}
-                            {link && (
-                              <a href={link} target="_blank" rel="noreferrer" style={{
-                                background: "#25D36622", color: "#25D366", border: "1px solid #25D36644",
-                                borderRadius: 7, padding: "5px 10px", fontSize: 12, fontWeight: 600,
-                                textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
-                              }}>
-                                📲 Cobrar
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {pendentes.map(renderCard)}
+                      {pagos.length > 0 && pendentes.length > 0 && (
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 8, margin: "4px 0",
+                        }}>
+                          <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+                          <span style={{ fontSize: 10, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 0.8, flexShrink: 0 }}>
+                            {pagos.length} pago{pagos.length !== 1 ? "s" : ""}
+                          </span>
+                          <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+                        </div>
+                      )}
+                      {pagos.map(renderCard)}
                     </div>
                   </div>
                 );

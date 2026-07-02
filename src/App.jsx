@@ -371,7 +371,12 @@ export default function App() {
           `Importar backup com ${parsed.alunos.length} aluno(s)? Isso vai SUBSTITUIR os dados atuais.`
         );
         if (confirmar) {
-          setData({ alunos: parsed.alunos, pagamentos: parsed.pagamentos || {} });
+          setData({
+            alunos: parsed.alunos,
+            pagamentos: parsed.pagamentos || {},
+            frequencia: parsed.frequencia || {},
+            planoAula: parsed.planoAula || { itens: PLANO_INICIAL, marcados: {} },
+          });
         }
       } catch {
         alert("Erro ao ler o arquivo. Verifique se é um backup válido do Zouk - me.");

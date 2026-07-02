@@ -179,8 +179,15 @@ function getValor(aluno) {
   return Math.max(0, bruto - desconto);
 }
 
-function getAulasPorMes(tipo) {
-  return tipo === "bolsista" ? 3 : 4;
+function getAulasPorMes(tipo, ano, mes) {
+  // Conta quantas segundas-feiras (semanas de aula) existem no mês
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=Dom, 1=Seg...
+  const offset = (1 - primeiroDia + 7) % 7; // dias até a 1ª segunda
+  const primeiraSegunda = offset + 1;
+  const totalSegundas = Math.floor((diasNoMes - primeiraSegunda) / 7) + 1;
+  const aulasBase = totalSegundas >= 5 ? 5 : 4;
+  return tipo === "bolsista" ? Math.max(3, aulasBase - 1) : aulasBase;
 }
 
 function loadData() {
@@ -224,6 +231,7 @@ export default function App() {
   const [nivelIdx, setNivelIdx] = useState(0);
   const [freqMesSel, setFreqMesSel] = useState(now.getMonth());
   const [freqAnoSel, setFreqAnoSel] = useState(now.getFullYear());
+  const [freqNivelSel, setFreqNivelSel] = useState("todos");
 
   useEffect(() => { saveData(data); }, [data]);
 
@@ -646,12 +654,78 @@ export default function App() {
         {tab === "frequencia" && (() => {
           const freqKey = getMesKey(freqAnoSel, freqMesSel);
           const freqMes = data.frequencia[freqKey] || {};
-          const alunosOrdenados = [...alunosAtivos].sort((a, b) => a.nome.localeCompare(b.nome));
+          const niveisFreq = [...new Set(alunosAtivos.map(a => a.nivel))].sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+
+          const alunosFiltrados = [...alunosAtivos]
+            .filter(a => freqNivelSel === "todos" || a.nivel === freqNivelSel)
+            .sort((a, b) => a.nome.localeCompare(b.nome));
+
+          const totalAulasMes = getAulasPorMes("aluno", freqAnoSel, freqMesSel);
+
+          function renderAluno(aluno) {
+            const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel);
+            const presencas = freqMes[aluno.id] || [];
+            const qtdPresente = presencas.filter(Boolean).length;
+            const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
+            const corPct = pct >= 75 ? COLORS.green : pct >= 50 ? COLORS.gold : COLORS.red;
+
+            return (
+              <div key={aluno.id} style={{
+                background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                borderRadius: 12, padding: "14px 16px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: TIPO_LABELS[aluno.tipo].color + "22",
+                    border: `1px solid ${TIPO_LABELS[aluno.tipo].color}44`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, fontWeight: 800, color: TIPO_LABELS[aluno.tipo].color, flexShrink: 0,
+                  }}>
+                    {aluno.nome.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aluno.nome}</div>
+                    <div style={{ fontSize: 11, color: TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>
+                      {TIPO_LABELS[aluno.tipo].label}
+                      {freqNivelSel === "todos" && <> · Nível {aluno.nivel}</>}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: corPct }}>{pct}%</div>
+                    <div style={{ fontSize: 10, color: COLORS.textDim }}>{qtdPresente}/{totalAulas} aulas</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {Array.from({ length: totalAulas }).map((_, i) => {
+                    const presente = presencas[i] === true;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => togglePresenca(aluno.id, i, freqKey)}
+                        style={{
+                          flex: 1, height: 38, borderRadius: 8, cursor: "pointer",
+                          border: `2px solid ${presente ? COLORS.green : COLORS.border}`,
+                          background: presente ? COLORS.green + "33" : "transparent",
+                          color: presente ? COLORS.green : COLORS.textDim,
+                          fontSize: 16, fontWeight: 700,
+                          transition: "all 0.15s",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >
+                        {presente ? "✓" : <span style={{ fontSize: 11 }}>Aula {i + 1}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div>
               {/* Seletor de mês */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
                 <button onClick={() => {
                   if (freqMesSel === 0) { setFreqMesSel(11); setFreqAnoSel(a => a - 1); }
                   else setFreqMesSel(m => m - 1);
@@ -665,74 +739,105 @@ export default function App() {
                 }} style={btnNav}>›</button>
               </div>
 
-              {alunosOrdenados.length === 0 ? (
+              {/* Badge de aulas no mês */}
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16,
+                background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                borderRadius: 8, padding: "6px 12px", fontSize: 12, color: COLORS.textMuted,
+              }}>
+                <span style={{ color: COLORS.gold, fontWeight: 700 }}>{totalAulasMes} aulas</span>
+                <span>neste mês</span>
+                {totalAulasMes === 5 && (
+                  <span style={{
+                    background: COLORS.gold + "22", color: COLORS.gold,
+                    border: `1px solid ${COLORS.gold}44`, borderRadius: 5,
+                    padding: "1px 6px", fontSize: 10, fontWeight: 700,
+                  }}>5ª semana</span>
+                )}
+              </div>
+
+              {/* Sub-navegação por nível */}
+              {niveisFreq.length > 0 && (
+                <div style={{
+                  display: "flex", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none", msOverflowStyle: "none",
+                  borderBottom: `1px solid ${COLORS.border}`, marginBottom: 20,
+                  marginLeft: -24, marginRight: -24, paddingLeft: 24,
+                }}>
+                  <button onClick={() => setFreqNivelSel("todos")} style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "8px 14px", fontSize: 12, fontWeight: 600,
+                    color: freqNivelSel === "todos" ? COLORS.gold : COLORS.textMuted,
+                    borderBottom: freqNivelSel === "todos" ? `2px solid ${COLORS.gold}` : "2px solid transparent",
+                    whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
+                  }}>
+                    Todos
+                  </button>
+                  {niveisFreq.map(nivel => {
+                    const cor = NIVEL_CORES[`Zouk-${nivel}`] || COLORS.textMuted;
+                    const emoji = NIVEL_EMOJI[`Zouk-${nivel}`] || "⚪";
+                    const ativo = freqNivelSel === nivel;
+                    const qtdNivel = alunosAtivos.filter(a => a.nivel === nivel);
+                    const totalPresentes = qtdNivel.reduce((s, a) => {
+                      const p = (freqMes[a.id] || []).filter(Boolean).length;
+                      return s + p;
+                    }, 0);
+                    const totalPossivel = qtdNivel.reduce((s, a) => s + getAulasPorMes(a.tipo, freqAnoSel, freqMesSel), 0);
+                    const pctNivel = totalPossivel > 0 ? Math.round((totalPresentes / totalPossivel) * 100) : 0;
+                    return (
+                      <button key={nivel} onClick={() => setFreqNivelSel(nivel)} style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        padding: "8px 14px", fontSize: 12, fontWeight: 600,
+                        color: ativo ? cor : COLORS.textMuted,
+                        borderBottom: ativo ? `2px solid ${cor}` : "2px solid transparent",
+                        whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
+                      }}>
+                        {emoji} N{nivel}
+                        <span style={{ marginLeft: 4, fontSize: 10, color: ativo ? cor : COLORS.textDim }}>
+                          {pctNivel}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {alunosFiltrados.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textDim }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>🎶</div>
                   <div style={{ fontSize: 14 }}>Nenhum aluno cadastrado ainda.</div>
                 </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {alunosOrdenados.map(aluno => {
-                    const totalAulas = getAulasPorMes(aluno.tipo);
-                    const presencas = freqMes[aluno.id] || [];
-                    const qtdPresente = presencas.filter(Boolean).length;
-                    const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
-                    const corPct = pct >= 75 ? COLORS.green : pct >= 50 ? COLORS.gold : COLORS.red;
-
+              ) : freqNivelSel === "todos" ? (
+                // Visão "Todos": agrupado por nível
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {niveisFreq.map(nivel => {
+                    const cor = NIVEL_CORES[`Zouk-${nivel}`] || COLORS.textMuted;
+                    const emoji = NIVEL_EMOJI[`Zouk-${nivel}`] || "⚪";
+                    const grupo = alunosFiltrados.filter(a => a.nivel === nivel);
+                    if (grupo.length === 0) return null;
                     return (
-                      <div key={aluno.id} style={{
-                        background: COLORS.surface, border: `1px solid ${COLORS.border}`,
-                        borderRadius: 12, padding: "14px 16px",
-                      }}>
-                        {/* Linha do nome */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 8,
-                            background: TIPO_LABELS[aluno.tipo].color + "22",
-                            border: `1px solid ${TIPO_LABELS[aluno.tipo].color}44`,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 13, fontWeight: 800, color: TIPO_LABELS[aluno.tipo].color, flexShrink: 0,
-                          }}>
-                            {aluno.nome.charAt(0).toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aluno.nome}</div>
-                            <div style={{ fontSize: 11, color: TIPO_LABELS[aluno.tipo].color, marginTop: 1 }}>
-                              {TIPO_LABELS[aluno.tipo].label} · Nível {aluno.nivel}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: corPct }}>{pct}%</div>
-                            <div style={{ fontSize: 10, color: COLORS.textDim }}>{qtdPresente}/{totalAulas} aulas</div>
-                          </div>
+                      <div key={nivel}>
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
+                          padding: "7px 12px",
+                          background: COLORS.surface, border: `1px solid ${cor}33`,
+                          borderRadius: 8, borderLeft: `3px solid ${cor}`,
+                        }}>
+                          <span>{emoji}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: cor }}>Nível {nivel}</span>
+                          <span style={{ fontSize: 11, color: COLORS.textDim }}>— {grupo.length} aluno{grupo.length !== 1 ? "s" : ""}</span>
                         </div>
-
-                        {/* Bolinhas de presença */}
-                        <div style={{ display: "flex", gap: 8 }}>
-                          {Array.from({ length: totalAulas }).map((_, i) => {
-                            const presente = presencas[i] === true;
-                            return (
-                              <button
-                                key={i}
-                                onClick={() => togglePresenca(aluno.id, i, freqKey)}
-                                style={{
-                                  flex: 1, height: 38, borderRadius: 8, cursor: "pointer",
-                                  border: `2px solid ${presente ? COLORS.green : COLORS.border}`,
-                                  background: presente ? COLORS.green + "33" : "transparent",
-                                  color: presente ? COLORS.green : COLORS.textDim,
-                                  fontSize: 16, fontWeight: 700,
-                                  transition: "all 0.15s",
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                }}
-                              >
-                                {presente ? "✓" : <span style={{ fontSize: 11 }}>Aula {i + 1}</span>}
-                              </button>
-                            );
-                          })}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {grupo.map(renderAluno)}
                         </div>
                       </div>
                     );
                   })}
+                </div>
+              ) : (
+                // Visão de nível específico
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {alunosFiltrados.map(renderAluno)}
                 </div>
               )}
             </div>

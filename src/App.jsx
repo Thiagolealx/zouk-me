@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 
 const COLORS = {
-  bg: "#0D0D0F",
-  surface: "#16161A",
-  surfaceHover: "#1E1E24",
-  border: "#2A2A33",
+  bg: "#1E1E25",
+  surface: "#27272F",
+  surfaceHover: "#31313B",
+  border: "#3A3A46",
   gold: "#E8B84B",
   goldLight: "#F5D07A",
   goldDim: "#A07C28",
   text: "#F0EEE8",
-  textMuted: "#8A8A99",
-  textDim: "#555566",
+  textMuted: "#9A9AAA",
+  textDim: "#666677",
   green: "#4CAF82",
   red: "#E05C5C",
   blue: "#5B9CF6",
@@ -180,13 +180,13 @@ function getValor(aluno) {
 }
 
 function getAulasPorMes(tipo, ano, mes) {
-  // Conta quantas segundas-feiras (semanas de aula) existem no mês
+  // Conta quantas quintas-feiras existem no mês (dia de aula)
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-  const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=Dom, 1=Seg...
-  const offset = (1 - primeiroDia + 7) % 7; // dias até a 1ª segunda
-  const primeiraSegunda = offset + 1;
-  const totalSegundas = Math.floor((diasNoMes - primeiraSegunda) / 7) + 1;
-  const aulasBase = totalSegundas >= 5 ? 5 : 4;
+  const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=Dom, 4=Qui...
+  const offset = (4 - primeiroDia + 7) % 7; // dias até a 1ª quinta
+  const primeiraQuinta = offset + 1;
+  const totalQuintas = Math.floor((diasNoMes - primeiraQuinta) / 7) + 1;
+  const aulasBase = totalQuintas >= 5 ? 5 : 4;
   return tipo === "bolsista" ? Math.max(3, aulasBase - 1) : aulasBase;
 }
 
@@ -263,7 +263,15 @@ export default function App() {
     setData(d => {
       const freqMes = d.frequencia[freqKey] || {};
       const presencas = freqMes[alunoId] ? [...freqMes[alunoId]] : [];
-      presencas[aulaIdx] = !presencas[aulaIdx];
+      const atual = presencas[aulaIdx];
+      // Ciclo: vazio → ✓ presente → ✕ faltou → vazio
+      if (atual === true) {
+        presencas[aulaIdx] = "falta";
+      } else if (atual === "falta") {
+        presencas[aulaIdx] = undefined;
+      } else {
+        presencas[aulaIdx] = true;
+      }
       return {
         ...d,
         frequencia: {
@@ -396,6 +404,45 @@ export default function App() {
     return `https://wa.me/55${num}?text=${msg}`;
   }
 
+  function gerarResumoWhatsApp() {
+    const pagos = alunosMes.filter(a => a.pago && a.valor > 0);
+    const pendentes = alunosMes.filter(a => !a.pago && a.valor > 0);
+    const gratuitos = alunosMes.filter(a => a.valor === 0);
+
+    let msg = `📊 *Resumo ${MESES[mesSel]}/${anoSel}*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (pagos.length > 0) {
+      msg += `✅ *Pagaram (${pagos.length}):*\n`;
+      pagos.forEach(a => { msg += `  • ${a.nome} — R$ ${a.valor.toFixed(2).replace(".", ",")}\n`; });
+      msg += "\n";
+    }
+
+    if (pendentes.length > 0) {
+      msg += `⏳ *Pendentes (${pendentes.length}):*\n`;
+      pendentes.forEach(a => { msg += `  • ${a.nome} — R$ ${a.valor.toFixed(2).replace(".", ",")}\n`; });
+      msg += "\n";
+    }
+
+    if (gratuitos.length > 0) {
+      msg += `🎓 *Gratuitos (${gratuitos.length}):*\n`;
+      gratuitos.forEach(a => { msg += `  • ${a.nome}\n`; });
+      msg += "\n";
+    }
+
+    msg += `━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `💰 *Financeiro:*\n`;
+    msg += `  Total esperado: R$ ${totalEsperado.toFixed(2).replace(".", ",")}\n`;
+    msg += `  Arrecadado: R$ ${totalPago.toFixed(2).replace(".", ",")}\n`;
+    msg += `  Pendente: R$ ${totalPendente.toFixed(2).replace(".", ",")}\n\n`;
+    msg += `✂️ *Divisão:*\n`;
+    msg += `  Sua parte: R$ ${metade.toFixed(2).replace(".", ",")}\n`;
+    msg += `  Sócio: R$ ${metade.toFixed(2).replace(".", ",")}`;
+
+    const link = `https://wa.me/5583998699329?text=${encodeURIComponent(msg)}`;
+    window.open(link, "_blank");
+  }
+
   const alunosAtivos = data.alunos.filter(a => a.ativo !== false);
   const alunosInativos = data.alunos.filter(a => a.ativo === false);
 
@@ -450,11 +497,25 @@ export default function App() {
             </div>
 
             {/* Cards resumo */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 }}>
               <Card label="Total Esperado" value={`R$ ${totalEsperado.toFixed(2).replace(".",",")}`} color={COLORS.textMuted} />
               <Card label="Arrecadado" value={`R$ ${totalPago.toFixed(2).replace(".",",")}`} color={COLORS.green} />
               <Card label="Pendente" value={`R$ ${totalPendente.toFixed(2).replace(".",",")}`} color={totalPendente > 0 ? COLORS.red : COLORS.green} />
             </div>
+
+            {/* Botão resumo WhatsApp */}
+            <button
+              onClick={gerarResumoWhatsApp}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 20,
+                background: "#25D36622", color: "#25D366",
+                border: "1px solid #25D36644", borderRadius: 10,
+                padding: "10px 18px", fontSize: 13, fontWeight: 700,
+                cursor: "pointer", width: "100%", justifyContent: "center",
+              }}
+            >
+              📋 Gerar Resumo do Mês e Enviar no WhatsApp
+            </button>
             {/* Barra de progresso */}
             <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "16px 20px", marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: COLORS.textMuted }}>
@@ -695,7 +756,8 @@ export default function App() {
           function renderAluno(aluno) {
             const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel);
             const presencas = freqMes[aluno.id] || [];
-            const qtdPresente = presencas.filter(Boolean).length;
+            const qtdPresente = presencas.filter(v => v === true).length;
+            const qtdFalta = presencas.filter(v => v === "falta").length;
             const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
             const corPct = pct >= 75 ? COLORS.green : pct >= 50 ? COLORS.gold : COLORS.red;
 
@@ -723,27 +785,32 @@ export default function App() {
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
                     <div style={{ fontSize: 16, fontWeight: 800, color: corPct }}>{pct}%</div>
-                    <div style={{ fontSize: 10, color: COLORS.textDim }}>{qtdPresente}/{totalAulas} aulas</div>
+                    <div style={{ fontSize: 10, color: COLORS.textDim }}>
+                      {qtdPresente}/{totalAulas} presentes
+                      {qtdFalta > 0 && <span style={{ color: COLORS.red }}> · {qtdFalta} falta{qtdFalta !== 1 ? "s" : ""}</span>}
+                    </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 6 }}>
                   {Array.from({ length: totalAulas }).map((_, i) => {
                     const presente = presencas[i] === true;
+                    const faltou = presencas[i] === "falta";
                     return (
                       <button
                         key={i}
                         onClick={() => togglePresenca(aluno.id, i, freqKey)}
+                        title={presente ? "Clique para marcar como falta" : faltou ? "Clique para limpar" : "Clique para marcar presença"}
                         style={{
                           flex: 1, height: 38, borderRadius: 8, cursor: "pointer",
-                          border: `2px solid ${presente ? COLORS.green : COLORS.border}`,
-                          background: presente ? COLORS.green + "33" : "transparent",
-                          color: presente ? COLORS.green : COLORS.textDim,
+                          border: `2px solid ${presente ? COLORS.green : faltou ? COLORS.red : COLORS.border}`,
+                          background: presente ? COLORS.green + "33" : faltou ? COLORS.red + "22" : "transparent",
+                          color: presente ? COLORS.green : faltou ? COLORS.red : COLORS.textDim,
                           fontSize: 16, fontWeight: 700,
                           transition: "all 0.15s",
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}
                       >
-                        {presente ? "✓" : <span style={{ fontSize: 11 }}>Aula {i + 1}</span>}
+                        {presente ? "✓" : faltou ? "✕" : <span style={{ fontSize: 11 }}>Aula {i + 1}</span>}
                       </button>
                     );
                   })}
@@ -809,7 +876,7 @@ export default function App() {
                     const ativo = freqNivelSel === nivel;
                     const qtdNivel = alunosAtivos.filter(a => a.nivel === nivel);
                     const totalPresentes = qtdNivel.reduce((s, a) => {
-                      const p = (freqMes[a.id] || []).filter(Boolean).length;
+                      const p = (freqMes[a.id] || []).filter(v => v === true).length;
                       return s + p;
                     }, 0);
                     const totalPossivel = qtdNivel.reduce((s, a) => s + getAulasPorMes(a.tipo, freqAnoSel, freqMesSel), 0);
@@ -1574,10 +1641,8 @@ function PlanoModal({ item, onSave, onClose }) {
 }
 
 // Styles
-const COLORS_REF = { bg: "#0D0D0F", surface: "#16161A", border: "#2A2A33", gold: "#E8B84B", text: "#F0EEE8", textMuted: "#8A8A99" };
-
 const btnNav = {
-  background: "#16161A", border: "1px solid #2A2A33", color: "#F0EEE8",
+  background: "#27272F", border: "1px solid #3A3A46", color: "#F0EEE8",
   borderRadius: 8, width: 36, height: 36, cursor: "pointer", fontSize: 20, lineHeight: 1,
   display: "flex", alignItems: "center", justifyContent: "center",
 };
@@ -1590,12 +1655,12 @@ const overlayStyle = {
   display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16,
 };
 const modalBox = {
-  background: "#16161A", border: "1px solid #2A2A33", borderRadius: 14,
+  background: "#27272F", border: "1px solid #3A3A46", borderRadius: 14,
   padding: 24, width: "100%", maxWidth: 440,
 };
-const lbl = { display: "block", fontSize: 11, color: "#8A8A99", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 };
+const lbl = { display: "block", fontSize: 11, color: "#9A9AAA", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 };
 const inp = {
-  width: "100%", background: "#0D0D0F", border: "1px solid #2A2A33", borderRadius: 8,
+  width: "100%", background: "#1E1E25", border: "1px solid #3A3A46", borderRadius: 8,
   color: "#F0EEE8", fontSize: 14, padding: "10px 12px", marginBottom: 14,
   boxSizing: "border-box", outline: "none",
 };
@@ -1604,7 +1669,7 @@ const btnPrimary = {
   padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer",
 };
 const btnSec = {
-  background: "transparent", color: "#8A8A99", border: "1px solid #2A2A33", borderRadius: 8,
+  background: "transparent", color: "#9A9AAA", border: "1px solid #3A3A46", borderRadius: 8,
   padding: "10px 0", fontSize: 13, fontWeight: 600, cursor: "pointer",
 };
 const btnDanger = {

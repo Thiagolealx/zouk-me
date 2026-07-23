@@ -231,10 +231,10 @@ export default function App() {
   const [planoModalOpen, setPlanoModalOpen] = useState(false);
   const [editPlanoItem, setEditPlanoItem] = useState(null);
   const [planoSubTab, setPlanoSubTab] = useState("geral");
-  const [notasMesSel, setNotasMesSel] = useState(now.getMonth());
-  const [notasAnoSel, setNotasAnoSel] = useState(now.getFullYear());
 
   const now = new Date();
+  const [notasMesSel, setNotasMesSel] = useState(now.getMonth());
+  const [notasAnoSel, setNotasAnoSel] = useState(now.getFullYear());
   const [mesSel, setMesSel] = useState(now.getMonth());
   const [anoSel, setAnoSel] = useState(now.getFullYear());
   const [nivelIdx, setNivelIdx] = useState(0);
@@ -867,13 +867,14 @@ export default function App() {
                   {Array.from({ length: totalAulas }).map((_, i) => {
                     const presente = presencas[i] === true;
                     const faltou = presencas[i] === "falta";
+                    const itensPorLinha = Math.min(totalAulas, 5);
                     return (
                       <button
                         key={i}
                         onClick={() => togglePresenca(aluno.id, i, freqKey)}
                         title={presente ? "Clique para marcar como falta" : faltou ? "Clique para limpar" : "Clique para marcar presença"}
                         style={{
-                          flex: `0 0 calc(${100 / totalAulasMes}% - 6px)`, height: 38, borderRadius: 8, cursor: "pointer",
+                          flex: `0 0 calc(${100 / itensPorLinha}% - 6px)`, height: 38, borderRadius: 8, cursor: "pointer",
                           border: `2px solid ${presente ? COLORS.green : faltou ? COLORS.red : COLORS.border}`,
                           background: presente ? COLORS.green + "33" : faltou ? COLORS.red + "22" : "transparent",
                           color: presente ? COLORS.green : faltou ? COLORS.red : COLORS.textDim,

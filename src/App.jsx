@@ -209,7 +209,11 @@ function loadData() {
 }
 
 function saveData(data) {
-  localStorage.setItem("zoukme_v1", JSON.stringify(data));
+  try {
+    localStorage.setItem("zoukme_v1", JSON.stringify(data));
+  } catch (e) {
+    console.error("Não foi possível salvar os dados localmente:", e);
+  }
 }
 
 function getMesKey(ano, mes) {

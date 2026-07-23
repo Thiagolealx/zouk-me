@@ -469,21 +469,33 @@ export default function App() {
   function gerarResumoFrequencia() {
     const freqKey = getMesKey(freqAnoSel, freqMesSel);
     const freqMes = data.frequencia[freqKey] || {};
-    const ativos = data.alunos.filter(a => a.ativo !== false).sort((a, b) => a.nome.localeCompare(b.nome));
+    const ativos = data.alunos.filter(a => a.ativo !== false);
+
+    const niveis = [...new Set(ativos.map(a => a.nivel))].sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, { numeric: true })
+    );
 
     let msg = `📋 *Relatório de Frequência*\n`;
     msg += `*${MESES[freqMesSel]}/${freqAnoSel}*\n`;
     msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    ativos.forEach(aluno => {
-      const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel, aluno.aulaDupla);
-      const presencas = freqMes[aluno.id] || [];
-      const qtdPresente = presencas.filter(v => v === true).length;
-      const qtdFalta = presencas.filter(v => v === "falta").length;
-      const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
-      const emoji = pct >= 75 ? "✅" : pct >= 50 ? "⚠️" : "❌";
-      msg += `${emoji} *${aluno.nome}* — ${qtdPresente}/${totalAulas} (${pct}%)`;
-      if (qtdFalta > 0) msg += ` · ${qtdFalta} falta${qtdFalta !== 1 ? "s" : ""}`;
+    niveis.forEach(nivel => {
+      const alunosNivel = ativos
+        .filter(a => a.nivel === nivel)
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+
+      msg += `*Nível ${nivel}*\n`;
+
+      alunosNivel.forEach(aluno => {
+        const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel, aluno.aulaDupla);
+        const presencas = freqMes[aluno.id] || [];
+        const qtdPresente = presencas.filter(v => v === true).length;
+        const qtdFalta = presencas.filter(v => v === "falta").length;
+        const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
+        const emoji = pct >= 75 ? "✅" : pct >= 50 ? "⚠️" : "❌";
+        msg += `${emoji} *${aluno.nome}* — ${qtdPresente} presença${qtdPresente !== 1 ? "s" : ""} e ${qtdFalta} falta${qtdFalta !== 1 ? "s" : ""} (${pct}%)\n`;
+      });
+
       msg += `\n`;
     });
 

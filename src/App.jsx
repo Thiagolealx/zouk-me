@@ -179,7 +179,7 @@ function getValor(aluno) {
   return Math.max(0, bruto - desconto);
 }
 
-function getAulasPorMes(tipo, ano, mes) {
+function getAulasPorMes(tipo, ano, mes, aulaDupla) {
   // Conta quantas quintas-feiras existem no mês (dia de aula)
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
   const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=Dom, 4=Qui...
@@ -187,7 +187,7 @@ function getAulasPorMes(tipo, ano, mes) {
   const primeiraQuinta = offset + 1;
   const totalQuintas = Math.floor((diasNoMes - primeiraQuinta) / 7) + 1;
   const aulasBase = totalQuintas >= 5 ? 5 : 4;
-  return tipo === "bolsista" ? Math.max(3, aulasBase - 1) : aulasBase;
+  return tipo === "bolsista" && aulaDupla ? aulasBase * 2 : aulasBase;
 }
 
 function loadData() {
@@ -440,6 +440,31 @@ export default function App() {
     msg += `  Sócio: R$ ${metade.toFixed(2).replace(".", ",")}`;
 
     const link = `https://wa.me/5583998699329?text=${encodeURIComponent(msg)}`;
+    window.open(link, "_blank");
+  }
+
+  function gerarResumoFrequencia() {
+    const freqKey = getMesKey(freqAnoSel, freqMesSel);
+    const freqMes = data.frequencia[freqKey] || {};
+    const ativos = data.alunos.filter(a => a.ativo !== false).sort((a, b) => a.nome.localeCompare(b.nome));
+
+    let msg = `📋 *Relatório de Frequência*\n`;
+    msg += `*${MESES[freqMesSel]}/${freqAnoSel}*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    ativos.forEach(aluno => {
+      const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel, aluno.aulaDupla);
+      const presencas = freqMes[aluno.id] || [];
+      const qtdPresente = presencas.filter(v => v === true).length;
+      const qtdFalta = presencas.filter(v => v === "falta").length;
+      const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
+      const emoji = pct >= 75 ? "✅" : pct >= 50 ? "⚠️" : "❌";
+      msg += `${emoji} *${aluno.nome}* — ${qtdPresente}/${totalAulas} (${pct}%)`;
+      if (qtdFalta > 0) msg += ` · ${qtdFalta} falta${qtdFalta !== 1 ? "s" : ""}`;
+      msg += `\n`;
+    });
+
+    const link = `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(link, "_blank");
   }
 
@@ -754,7 +779,7 @@ export default function App() {
           const totalAulasMes = getAulasPorMes("aluno", freqAnoSel, freqMesSel);
 
           function renderAluno(aluno) {
-            const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel);
+            const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel, aluno.aulaDupla);
             const presencas = freqMes[aluno.id] || [];
             const qtdPresente = presencas.filter(v => v === true).length;
             const qtdFalta = presencas.filter(v => v === "falta").length;
@@ -853,6 +878,20 @@ export default function App() {
                 )}
               </div>
 
+              {/* Botão relatório de frequência WhatsApp */}
+              <button
+                onClick={gerarResumoFrequencia}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, marginBottom: 20,
+                  background: "#25D36622", color: "#25D366",
+                  border: "1px solid #25D36644", borderRadius: 10,
+                  padding: "10px 18px", fontSize: 13, fontWeight: 700,
+                  cursor: "pointer", width: "100%", justifyContent: "center",
+                }}
+              >
+                📋 Gerar Relatório de Frequência e Enviar no WhatsApp
+              </button>
+
               {/* Sub-navegação por nível */}
               {niveisFreq.length > 0 && (
                 <div style={{
@@ -879,7 +918,7 @@ export default function App() {
                       const p = (freqMes[a.id] || []).filter(v => v === true).length;
                       return s + p;
                     }, 0);
-                    const totalPossivel = qtdNivel.reduce((s, a) => s + getAulasPorMes(a.tipo, freqAnoSel, freqMesSel), 0);
+                    const totalPossivel = qtdNivel.reduce((s, a) => s + getAulasPorMes(a.tipo, freqAnoSel, freqMesSel, a.aulaDupla), 0);
                     const pctNivel = totalPossivel > 0 ? Math.round((totalPresentes / totalPossivel) * 100) : 0;
                     return (
                       <button key={nivel} onClick={() => setFreqNivelSel(nivel)} style={{
@@ -1470,6 +1509,7 @@ function Modal({ aluno, onSave, onClose, onToggleAtivo }) {
     mensalidade: aluno?.mensalidade ?? DEFAULT_MENSALIDADE,
     desconto: aluno?.desconto ?? 0,
     whatsapp: aluno?.whatsapp || "",
+    aulaDupla: aluno?.aulaDupla ?? false,
     id: aluno?.id || null,
   });
 
@@ -1508,6 +1548,20 @@ function Modal({ aluno, onSave, onClose, onToggleAtivo }) {
             </button>
           ))}
         </div>
+
+        {form.tipo === "bolsista" && (
+          <label style={{
+            display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
+            cursor: "pointer", fontSize: 13, color: COLORS.textMuted,
+          }}>
+            <input
+              type="checkbox"
+              checked={form.aulaDupla}
+              onChange={e => set("aulaDupla", e.target.checked)}
+            />
+            Aula duplicada (2x por semana — dobra a quantidade de aulas no mês)
+          </label>
+        )}
 
         {form.tipo !== "bolsista" && (
           <>

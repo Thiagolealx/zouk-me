@@ -187,7 +187,7 @@ function getAulasPorMes(tipo, ano, mes, aulaDupla) {
   const primeiraQuinta = offset + 1;
   const totalQuintas = Math.floor((diasNoMes - primeiraQuinta) / 7) + 1;
   const aulasBase = totalQuintas >= 5 ? 5 : 4;
-  return tipo === "bolsista" && aulaDupla ? aulasBase * 2 : aulasBase;
+  return (tipo === "bolsista" || tipo === "meio") && aulaDupla ? aulasBase * 2 : aulasBase;
 }
 
 function loadData() {
@@ -1549,7 +1549,7 @@ function Modal({ aluno, onSave, onClose, onToggleAtivo }) {
           ))}
         </div>
 
-        {form.tipo === "bolsista" && (
+        {(form.tipo === "bolsista" || form.tipo === "meio") && (
           <label style={{
             display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
             cursor: "pointer", fontSize: 13, color: COLORS.textMuted,

@@ -198,11 +198,14 @@ function loadData() {
       return {
         frequencia: {},
         ...parsed,
-        planoAula: parsed.planoAula || { itens: PLANO_INICIAL, marcados: {} },
+        planoAula: {
+          itens: PLANO_INICIAL, marcados: {}, notas: {},
+          ...(parsed.planoAula || {}),
+        },
       };
     }
   } catch {}
-  return { alunos: [], pagamentos: {}, frequencia: {}, planoAula: { itens: PLANO_INICIAL, marcados: {} } };
+  return { alunos: [], pagamentos: {}, frequencia: {}, planoAula: { itens: PLANO_INICIAL, marcados: {}, notas: {} } };
 }
 
 function saveData(data) {
@@ -224,6 +227,8 @@ export default function App() {
   const [planoModalOpen, setPlanoModalOpen] = useState(false);
   const [editPlanoItem, setEditPlanoItem] = useState(null);
   const [planoSubTab, setPlanoSubTab] = useState("geral");
+  const [notasMesSel, setNotasMesSel] = useState(now.getMonth());
+  const [notasAnoSel, setNotasAnoSel] = useState(now.getFullYear());
 
   const now = new Date();
   const [mesSel, setMesSel] = useState(now.getMonth());
@@ -232,6 +237,7 @@ export default function App() {
   const [freqMesSel, setFreqMesSel] = useState(now.getMonth());
   const [freqAnoSel, setFreqAnoSel] = useState(now.getFullYear());
   const [freqNivelSel, setFreqNivelSel] = useState("todos");
+  const [freqModo, setFreqModo] = useState("mensal"); // "mensal" | "semestral"
 
   useEffect(() => { saveData(data); }, [data]);
 
@@ -304,6 +310,16 @@ export default function App() {
       planoAula: {
         ...d.planoAula,
         marcados: { ...d.planoAula.marcados, [id]: !d.planoAula.marcados[id] },
+      },
+    }));
+  }
+
+  function salvarNotaMes(mesKey, texto) {
+    setData(d => ({
+      ...d,
+      planoAula: {
+        ...d.planoAula,
+        notas: { ...(d.planoAula.notas || {}), [mesKey]: texto },
       },
     }));
   }
@@ -383,7 +399,10 @@ export default function App() {
             alunos: parsed.alunos,
             pagamentos: parsed.pagamentos || {},
             frequencia: parsed.frequencia || {},
-            planoAula: parsed.planoAula || { itens: PLANO_INICIAL, marcados: {} },
+            planoAula: {
+              itens: PLANO_INICIAL, marcados: {}, notas: {},
+              ...(parsed.planoAula || {}),
+            },
           });
         }
       } catch {
@@ -778,12 +797,35 @@ export default function App() {
 
           const totalAulasMes = getAulasPorMes("aluno", freqAnoSel, freqMesSel);
 
+          // Semestre atual: 0 = Jan-Jun, 1 = Jul-Dez
+          const semestreAtual = freqMesSel < 6 ? 0 : 1;
+          const mesesSemestre = semestreAtual === 0 ? [0, 1, 2, 3, 4, 5] : [6, 7, 8, 9, 10, 11];
+
+          function getStatsAluno(aluno) {
+            if (freqModo === "mensal") {
+              const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel, aluno.aulaDupla);
+              const presencas = freqMes[aluno.id] || [];
+              const presente = presencas.filter(v => v === true).length;
+              const falta = presencas.filter(v => v === "falta").length;
+              const pct = totalAulas > 0 ? Math.round((presente / totalAulas) * 100) : 0;
+              return { totalAulas, presente, falta, pct };
+            }
+            let totalAulas = 0, presente = 0, falta = 0;
+            mesesSemestre.forEach(m => {
+              const key = getMesKey(freqAnoSel, m);
+              const freqM = data.frequencia[key] || {};
+              const presencas = freqM[aluno.id] || [];
+              presente += presencas.filter(v => v === true).length;
+              falta += presencas.filter(v => v === "falta").length;
+              totalAulas += getAulasPorMes(aluno.tipo, freqAnoSel, m, aluno.aulaDupla);
+            });
+            const pct = totalAulas > 0 ? Math.round((presente / totalAulas) * 100) : 0;
+            return { totalAulas, presente, falta, pct };
+          }
+
           function renderAluno(aluno) {
-            const totalAulas = getAulasPorMes(aluno.tipo, freqAnoSel, freqMesSel, aluno.aulaDupla);
+            const { totalAulas, presente: qtdPresente, falta: qtdFalta, pct } = getStatsAluno(aluno);
             const presencas = freqMes[aluno.id] || [];
-            const qtdPresente = presencas.filter(v => v === true).length;
-            const qtdFalta = presencas.filter(v => v === "falta").length;
-            const pct = totalAulas > 0 ? Math.round((qtdPresente / totalAulas) * 100) : 0;
             const corPct = pct >= 75 ? COLORS.green : pct >= 50 ? COLORS.gold : COLORS.red;
 
             return (
@@ -816,7 +858,8 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
+                {freqModo === "mensal" && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {Array.from({ length: totalAulas }).map((_, i) => {
                     const presente = presencas[i] === true;
                     const faltou = presencas[i] === "falta";
@@ -826,7 +869,7 @@ export default function App() {
                         onClick={() => togglePresenca(aluno.id, i, freqKey)}
                         title={presente ? "Clique para marcar como falta" : faltou ? "Clique para limpar" : "Clique para marcar presença"}
                         style={{
-                          flex: 1, height: 38, borderRadius: 8, cursor: "pointer",
+                          flex: `0 0 calc(${100 / totalAulasMes}% - 6px)`, height: 38, borderRadius: 8, cursor: "pointer",
                           border: `2px solid ${presente ? COLORS.green : faltou ? COLORS.red : COLORS.border}`,
                           background: presente ? COLORS.green + "33" : faltou ? COLORS.red + "22" : "transparent",
                           color: presente ? COLORS.green : faltou ? COLORS.red : COLORS.textDim,
@@ -840,41 +883,80 @@ export default function App() {
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           }
 
+          const totalAulasSemestre = mesesSemestre.reduce((s, m) => s + getAulasPorMes("aluno", freqAnoSel, m), 0);
+
           return (
             <div>
-              {/* Seletor de mês */}
+              {/* Toggle Mensal / Semestral */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                {[["mensal", "Mensal"], ["semestral", "Semestral"]].map(([m, label]) => (
+                  <button key={m} onClick={() => setFreqModo(m)} style={{
+                    flex: 1, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    border: `1.5px solid ${freqModo === m ? COLORS.gold : COLORS.border}`,
+                    background: freqModo === m ? COLORS.gold + "22" : "transparent",
+                    color: freqModo === m ? COLORS.gold : COLORS.textMuted,
+                    transition: "all 0.15s",
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Seletor de mês / semestre */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
                 <button onClick={() => {
-                  if (freqMesSel === 0) { setFreqMesSel(11); setFreqAnoSel(a => a - 1); }
-                  else setFreqMesSel(m => m - 1);
+                  if (freqModo === "mensal") {
+                    if (freqMesSel === 0) { setFreqMesSel(11); setFreqAnoSel(a => a - 1); }
+                    else setFreqMesSel(m => m - 1);
+                  } else {
+                    if (semestreAtual === 0) { setFreqMesSel(6); setFreqAnoSel(a => a - 1); }
+                    else setFreqMesSel(0);
+                  }
                 }} style={btnNav}>‹</button>
                 <span style={{ fontSize: 18, fontWeight: 700, minWidth: 180, textAlign: "center" }}>
-                  {MESES[freqMesSel]} <span style={{ color: COLORS.textMuted, fontWeight: 400 }}>{freqAnoSel}</span>
+                  {freqModo === "mensal"
+                    ? <>{MESES[freqMesSel]} <span style={{ color: COLORS.textMuted, fontWeight: 400 }}>{freqAnoSel}</span></>
+                    : <>{semestreAtual === 0 ? "1º" : "2º"} Semestre <span style={{ color: COLORS.textMuted, fontWeight: 400 }}>{freqAnoSel}</span></>}
                 </span>
                 <button onClick={() => {
-                  if (freqMesSel === 11) { setFreqMesSel(0); setFreqAnoSel(a => a + 1); }
-                  else setFreqMesSel(m => m + 1);
+                  if (freqModo === "mensal") {
+                    if (freqMesSel === 11) { setFreqMesSel(0); setFreqAnoSel(a => a + 1); }
+                    else setFreqMesSel(m => m + 1);
+                  } else {
+                    if (semestreAtual === 0) { setFreqMesSel(6); }
+                    else { setFreqMesSel(0); setFreqAnoSel(a => a + 1); }
+                  }
                 }} style={btnNav}>›</button>
               </div>
 
-              {/* Badge de aulas no mês */}
+              {/* Badge de aulas no período */}
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16,
                 background: COLORS.surface, border: `1px solid ${COLORS.border}`,
                 borderRadius: 8, padding: "6px 12px", fontSize: 12, color: COLORS.textMuted,
               }}>
-                <span style={{ color: COLORS.gold, fontWeight: 700 }}>{totalAulasMes} aulas</span>
-                <span>neste mês</span>
-                {totalAulasMes === 5 && (
-                  <span style={{
-                    background: COLORS.gold + "22", color: COLORS.gold,
-                    border: `1px solid ${COLORS.gold}44`, borderRadius: 5,
-                    padding: "1px 6px", fontSize: 10, fontWeight: 700,
-                  }}>5ª semana</span>
+                {freqModo === "mensal" ? (
+                  <>
+                    <span style={{ color: COLORS.gold, fontWeight: 700 }}>{totalAulasMes} aulas</span>
+                    <span>neste mês</span>
+                    {totalAulasMes === 5 && (
+                      <span style={{
+                        background: COLORS.gold + "22", color: COLORS.gold,
+                        border: `1px solid ${COLORS.gold}44`, borderRadius: 5,
+                        padding: "1px 6px", fontSize: 10, fontWeight: 700,
+                      }}>5ª semana</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span style={{ color: COLORS.gold, fontWeight: 700 }}>{totalAulasSemestre} aulas</span>
+                    <span>neste semestre</span>
+                  </>
                 )}
               </div>
 
@@ -914,11 +996,8 @@ export default function App() {
                     const emoji = NIVEL_EMOJI[`Zouk-${nivel}`] || "⚪";
                     const ativo = freqNivelSel === nivel;
                     const qtdNivel = alunosAtivos.filter(a => a.nivel === nivel);
-                    const totalPresentes = qtdNivel.reduce((s, a) => {
-                      const p = (freqMes[a.id] || []).filter(v => v === true).length;
-                      return s + p;
-                    }, 0);
-                    const totalPossivel = qtdNivel.reduce((s, a) => s + getAulasPorMes(a.tipo, freqAnoSel, freqMesSel, a.aulaDupla), 0);
+                    const totalPresentes = qtdNivel.reduce((s, a) => s + getStatsAluno(a).presente, 0);
+                    const totalPossivel = qtdNivel.reduce((s, a) => s + getStatsAluno(a).totalAulas, 0);
                     const pctNivel = totalPossivel > 0 ? Math.round((totalPresentes / totalPossivel) * 100) : 0;
                     return (
                       <button key={nivel} onClick={() => setFreqNivelSel(nivel)} style={{
@@ -1010,6 +1089,16 @@ export default function App() {
                   whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
                 }}>
                   Geral
+                </button>
+                {/* Aba Notas */}
+                <button onClick={() => setPlanoSubTab("notas")} style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  padding: "8px 14px", fontSize: 12, fontWeight: 600,
+                  color: subTabAtual === "notas" ? COLORS.gold : COLORS.textMuted,
+                  borderBottom: subTabAtual === "notas" ? `2px solid ${COLORS.gold}` : "2px solid transparent",
+                  whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
+                }}>
+                  📝 Notas
                 </button>
                 {/* Abas por nível */}
                 {niveisPresentes.map(nivel => {
@@ -1149,6 +1238,47 @@ export default function App() {
                   )}
                 </div>
               )}
+
+              {/* ===== SUB-ABA NOTAS (texto livre por mês) ===== */}
+              {subTabAtual === "notas" && (() => {
+                const notaKey = getMesKey(notasAnoSel, notasMesSel);
+                const notas = plano.notas || {};
+                const texto = notas[notaKey] || "";
+                return (
+                  <div>
+                    {/* Seletor de mês */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                      <button onClick={() => {
+                        if (notasMesSel === 0) { setNotasMesSel(11); setNotasAnoSel(a => a - 1); }
+                        else setNotasMesSel(m => m - 1);
+                      }} style={btnNav}>‹</button>
+                      <span style={{ fontSize: 18, fontWeight: 700, minWidth: 180, textAlign: "center" }}>
+                        {MESES[notasMesSel]} <span style={{ color: COLORS.textMuted, fontWeight: 400 }}>{notasAnoSel}</span>
+                      </span>
+                      <button onClick={() => {
+                        if (notasMesSel === 11) { setNotasMesSel(0); setNotasAnoSel(a => a + 1); }
+                        else setNotasMesSel(m => m + 1);
+                      }} style={btnNav}>›</button>
+                    </div>
+
+                    <div style={{ fontSize: 12, color: COLORS.textDim, marginBottom: 10 }}>
+                      Cole aqui o que foi dado nas aulas deste mês (ex: direto do resumo do WhatsApp).
+                    </div>
+
+                    <textarea
+                      value={texto}
+                      onChange={e => salvarNotaMes(notaKey, e.target.value)}
+                      placeholder="Ex: 04/07 — Giro básico e ginga em dupla&#10;11/07 — Cambré e condução&#10;..."
+                      style={{
+                        width: "100%", minHeight: 320, resize: "vertical",
+                        background: COLORS.surface, border: `1px solid ${COLORS.border}`,
+                        borderRadius: 10, padding: "14px 16px", fontSize: 14, color: COLORS.text,
+                        fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                );
+              })()}
 
               {/* ===== SUB-ABA DE NÍVEL (checkboxes) ===== */}
               {subTabAtual !== "geral" && niveisPresentes.includes(subTabAtual) && (() => {
